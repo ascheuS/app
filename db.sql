@@ -1,4 +1,4 @@
---BORRA TABLAS SI EXISTEN
+--BORRA TABLAS EN EL SIGUIENTE ORDEN
 DROP TABLE IF EXISTS Bitacora_reportes;
 DROP TABLE IF EXISTS Multimedia_reportes;
 DROP TABLE IF EXISTS Reportes;
@@ -88,8 +88,7 @@ CREATE TABLE Multimedia_reportes(
     FOREIGN KEY (`ID_Reporte`) REFERENCES Reportes(`ID_Reporte`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE INDEX idx_multimedia_id_reporte ON Multimedia_reportes(`ID_Reporte`); --dudaaaaaaaaaaaaaaaaaa
-
+CREATE INDEX idx_multimedia_id_reporte ON Multimedia_reportes(`ID_Reporte`);
 CREATE TABLE Bitacora_reportes(
     `ID_Bitacora` INT NOT NULL AUTO_INCREMENT,
     `Nombre_Administrador` VARCHAR(255),
