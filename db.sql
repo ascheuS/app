@@ -27,7 +27,7 @@ CREATE TABLE Usuarios(
     `Nombre` VARCHAR(60) NOT NULL,
     `Apellido_1` VARCHAR(80),
     `Apellido_2` VARCHAR(80),
-    `password_hash` VARCHAR(255) NOT NULL,
+    `Contraseña` VARCHAR(255) NOT NULL,
     `ID_Cargo` INT,
     `ID_Estado_trabajador` INT,
     PRIMARY KEY (`Rut_usuario`),
@@ -63,12 +63,12 @@ CREATE TABLE Reportes(
     `Hora_Sincronizado` DATETIME DEFAULT NULL,
     `Hora_Actualizado` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `Peticiones_Idempotencia` VARCHAR(255),
-    `Rut_usuario` BIGINT,
+    `RUT` BIGINT,
     `ID_Severidad` INT,
     `ID_Area` INT,
     `ID_Estado_Actual` INT,
     PRIMARY KEY (`ID_Reporte`),
-    FOREIGN KEY (`Rut_usuario`) REFERENCES Usuarios(`Rut_usuario`) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (`RUT`) REFERENCES Usuarios(`RUT`) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (`ID_Area`) REFERENCES Areas(`ID_Area`) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (`ID_Severidad`) REFERENCES Severidad(`ID_Severidad`) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (`ID_Estado_Actual`) REFERENCES Estado_reportes(`ID_Estado_Actual`) ON UPDATE CASCADE ON DELETE SET NULL
@@ -89,19 +89,18 @@ CREATE TABLE Multimedia_reportes(
 );
 
 CREATE INDEX idx_multimedia_id_reporte ON Multimedia_reportes(`ID_Reporte`);
-
 CREATE TABLE Bitacora_reportes(
     `ID_Bitacora` INT NOT NULL AUTO_INCREMENT,
     `Nombre_Administrador` VARCHAR(255),
-    `detalle` TEXT,
+    `Detalle` TEXT,
     `Actualizacion_Fecha` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `ID_Reporte` INT,
     `ID_Estado_Actual` INT,
-    `Rut_usuario` BIGINT,
+    `RUT` BIGINT,
     PRIMARY KEY (`ID_Bitacora`),
     FOREIGN KEY (`ID_Reporte`) REFERENCES Reportes(`ID_Reporte`) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (`ID_Estado_Actual`) REFERENCES Estado_reportes(`ID_Estado_Actual`) ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY (`Rut_usuario`) REFERENCES Usuarios(`Rut_usuario`) ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY (`RUT`) REFERENCES Usuarios(`RUT`) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_bitacora_id_reporte ON Bitacora_reportes(`ID_Reporte`);
