@@ -104,3 +104,77 @@ CREATE TABLE Bitacora_reportes(
 );
 
 CREATE INDEX idx_bitacora_id_reporte ON Bitacora_reportes(`ID_Reporte`);
+
+CREATE TABLE Estado_transicion(
+    `ID_Transicion` INT NOT NULL AUTO_INCREMENT,
+    `Estado_Desde` INT, 
+    `Estado_Hacia` INT,
+    PRIMARY KEY (`ID_Transicion`),
+    FOREIGN KEY (`Estado_Desde`) REFERENCES Estado_reportes(`ID_Estado_Actual`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`Estado_Hacia`) REFERENCES Estado_reportes(`ID_Estado_Actual`) ON UPDATE CASCADE ON DELETE CASCADE     
+);
+
+
+--INSERTS
+INSERT INTO Cargos (ID_Cargo, Nombre_Cargo) VALUES
+(1, 'Administrador'),
+(2, 'Trabajador');
+
+INSERT INTO Estado_trabajador (ID_Estado_trabajador, Nombre_Estado) VALUES
+(1, 'Activo'),
+(2, 'Inactivo');
+
+INSERT INTO Areas (ID_Area, Nombre_Area) VALUES
+(1, 'Perforación y Tronadura'),
+(2, 'Carga y Transporte'),
+(3, 'Chancado y Molienda'),
+(4, 'Mantenimiento Mecánico'),
+(5, 'Mantenimiento Eléctrico'),
+(6, 'Seguridad Industrial'),
+(7, 'Control de Producción'),
+(8, 'Planta Concentradora'),
+(9, 'Salud y Medio Ambiente'),
+(10, 'Administración General');
+
+INSERT INTO Severidad (ID_Severidad, Nombre_Severidad) VALUES
+(1, 'Baja'),
+(2, 'Media'),
+(3, 'Alta');
+
+INSERT INTO Estado_reportes (ID_Estado_Actual, Nombre_Estado) VALUES
+(1, 'Pendiente'),
+(2, 'Aprobado'),
+(3, 'Rechazado');
+
+INSERT INTO Estado_transicion (Estado_Desde, Estado_Hacia) VALUES
+(1, 2), -- De Pendiente a Aprobado
+(1, 3); -- De Pendiente a Rechazado
+
+--FUNCIONES
+-- OBTENER ID POR NOMBRE
+DELIMITER //  
+CREATE OR REPLACE FUNCTION
+fn_estado_id(p_nombre VARCHAR(255))
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE v_id INT;
+    SELECT ID_Estado_Actual INTO v_id
+    FROM Estado_reportes
+    WHERE LOWER(Nombre_Estado) = LOWER(p_nombre);
+    RETURN v_id;
+END //
+DELIMITER ;
+
+--VALIDAR REGLA EN ESTADO_TRANSICION
+DELIMITER $$
+CREATE OR REPLACE FUNCTION fn_transicion_valida(p_desde INT, p_hacia INT)
+RETURNS TINYINT
+DETERMINISTIC
+BEGIN
+  RETURN EXISTS(
+    SELECT 1 FROM Estado_transicion
+    WHERE Estado_Desde = p_desde AND Estado_Hacia = p_hacia
+  );
+END$$
+DELIMITER ;
