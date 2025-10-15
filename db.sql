@@ -17,13 +17,13 @@ CREATE TABLE Cargos(
 );
 
 CREATE TABLE Estado_trabajador(
-    `ID_Estado_trabajador` INT NOT NULL
+    `ID_Estado_trabajador` INT NOT NULL,
     `Nombre_Estado` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`ID_Estado_trabajador`) 
 );
 
 CREATE TABLE Usuarios(
-    `Rut_usuario` BIGINT NOT NULL ,
+    `RUT` BIGINT NOT NULL ,
     `Nombre` VARCHAR(60) NOT NULL,
     `Apellido_1` VARCHAR(80),
     `Apellido_2` VARCHAR(80),
@@ -75,7 +75,7 @@ CREATE TABLE Reportes(
 );
 
 -- Índices sugeridos para rendimiento en joins/consultas
-CREATE INDEX idx_reportes_rut_usuario ON Reportes(`Rut_usuario`);
+CREATE INDEX idx_reportes_rut_usuario ON Reportes(`RUT`);
 CREATE INDEX idx_reportes_id_area ON Reportes(`ID_Area`);
 CREATE INDEX idx_reportes_fecha ON Reportes(`Fecha_Reporte`);
 
