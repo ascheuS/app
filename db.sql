@@ -151,6 +151,7 @@ INSERT INTO Estado_transicion (Estado_Desde, Estado_Hacia) VALUES
 (1, 3); -- De Pendiente a Rechazado
 
 --FUNCIONES
+
 -- OBTENER ID POR NOMBRE
 DELIMITER //  
 CREATE OR REPLACE FUNCTION
@@ -176,5 +177,91 @@ BEGIN
     SELECT 1 FROM Estado_transicion
     WHERE Estado_Desde = p_desde AND Estado_Hacia = p_hacia
   );
+END$$
+DELIMITER ;
+--VALIDAR FORMATO UUID v4
+DELIMITER $$
+CREATE OR REPLACE FUNCTION fn_validar_uuid_v4(p_uuid CHAR(36))
+RETURNS TINYINT
+DETERMINISTIC
+BEGIN
+    RETURN p_uuid REGEXP '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$';
+END$$
+DELIMITER ;
+--LIMPIA TIPO DE MEDIA
+DELIMITER $$
+CREATE OR REPLACE FUNCTION fn_media_tipo_normalizado(p_tipo VARCHAR(100))
+RETURNS VARCHAR(100)
+DETERMINISTIC
+BEGIN
+    RETURN LOWER(TRIM(p_tipo));
+END$$
+DELIMITER ;
+
+--TRIGGERS
+
+--REPORTES - ESTADO POR DEFECTO Y VALIDACION
+DELIMITER $$
+CREATE TRIGGER trg_reportes_before_insert
+BEFORE INSERT ON Reportes
+FOR EACH ROW
+BEGIN
+    --Esado por defecto
+    IF NEW.ID_Estado_Actual IS NULL THEN
+        SET NEW.ID_Estado_Actual = fn_estado_id('Pendiente');
+    END IF;
+    -- Hora de creado
+    IF NEW.Hora_Creado IS NULL THEN
+        SET NEW.Hora_Creado = CURRENT_TIMESTAMP;
+    END IF;
+    -- Fecha de reporte(si viene timestamp del cliente)
+    IF NEW.Fecha_Reporte IS NULL AND NEW.Hora_Creado IS NOT NULL THEN
+        SET NEW.Fecha_Reporte = DATE(NEW.Hora_Creado);
+    END IF;
+    --Validar UUID v4
+    IF fn_validar_uuid_v4(NEW.UUID_Cliente) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'UUID_Cliente no es un UUID v4 válido.';
+    END IF;
+END$$
+DELIMITER ;
+
+--VALIDAR TRANSICION DE ESTADO
+DELIMITER $$
+CREATE TRIGGER trg_reportes_before_update_estado
+BEFORE UPDATE ON Reportes
+FOR EACH ROW
+BEGIN
+    --Proteger UUID_Cliente de cambios
+    IF NEW.UUID_Cliente <> OLD.UUID_Cliente THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'UUID_Cliente no puede ser modificado.';
+    END IF;
+    --Validar transicion de estado
+    IF NEW.ID_Estado_Actual <> OLD.ID_Estado_Actual THEN
+        IF fn_transicion_valida(OLD.ID_Estado_Actual, NEW.ID_Estado_Actual) = 0 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Transición de estado no permitida.';
+        END IF;
+    END IF;
+END$$
+DELIMITER ;
+
+--REGISTRO EN BITACORA AL CAMBIAR ESTADO
+DELIMITER $$
+CREATE TRIGGER trg_reportes_after_update_estado
+AFTER UPDATE ON Reportes
+FOR EACH ROW
+BEGIN
+    IF NEW.ID_Estado_Actual <> OLD.ID_Estado_Actual THEN
+        INSERT INTO Bitacora_reportes (Nombre_Administrador, Detalle, Actualizacion_Fecha, ID_Reporte, ID_Estado_Actual, RUT)
+        VALUES (NULL,COALESCE(@comentario,CONCAT('Cambio de estado: ', OLD.ID_Estado_Actual, ' a ', NEW.ID_Estado_Actual)), CURRENT_TIMESTAMP, NEW.ID_Reporte, NEW.ID_Estado_Actual, @actor_rut);
+    END IF;
+END$$
+
+--NORMALIZAR TIPO DE MULTIMEDIA
+DELIMITER $$
+CREATE TRIGGER trg_multimedia_before_insert
+BEFORE INSERT ON Multimedia_reportes
+FOR EACH ROW
+BEGIN
+    SET NEW.Tipo_Multimedia = fn_media_tipo_normalizado(NEW.Tipo_Multimedia);
 END$$
 DELIMITER ;
