@@ -30,7 +30,7 @@ CREATE TABLE Usuarios(
     `Contraseña` VARCHAR(255) NOT NULL,
     `ID_Cargo` INT,
     `ID_Estado_trabajador` INT,
-    PRIMARY KEY (`Rut_usuario`),
+    PRIMARY KEY (`RUT`),
     FOREIGN KEY (`ID_Cargo`) REFERENCES Cargos(`ID_Cargo`) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (`ID_Estado_trabajador`) REFERENCES Estado_trabajador(`ID_Estado_trabajador`) ON UPDATE CASCADE ON DELETE SET NULL
 );
@@ -120,6 +120,24 @@ INSERT INTO Cargos (ID_Cargo, Nombre_Cargo) VALUES
 (1, 'Administrador'),
 (2, 'Trabajador');
 
+INSERT INTO Usuarios (
+    RUT, 
+    Nombre, 
+    Apellido_1, 
+    Apellido_2, 
+    Contraseña, 
+    ID_Cargo, 
+    ID_Estado_trabajador
+) 
+VALUES (
+    21232263, 
+    'Esteban', 
+    'Rojas', 
+    'Calderon', 
+    'el_hash_de_bcrypt_va_aqui', 
+    1, 
+    1
+);
 INSERT INTO Estado_trabajador (ID_Estado_trabajador, Nombre_Estado) VALUES
 (1, 'Activo'),
 (2, 'Inactivo');
@@ -154,7 +172,7 @@ INSERT INTO Estado_transicion (Estado_Desde, Estado_Hacia) VALUES
 
 -- OBTENER ID POR NOMBRE
 DELIMITER //  
-CREATE OR REPLACE FUNCTION
+CREATE FUNCTION
 fn_estado_id(p_nombre VARCHAR(255))
 RETURNS INT
 DETERMINISTIC
@@ -169,7 +187,7 @@ DELIMITER ;
 
 --VALIDAR REGLA EN ESTADO_TRANSICION
 DELIMITER $$
-CREATE OR REPLACE FUNCTION fn_transicion_valida(p_desde INT, p_hacia INT)
+CREATE FUNCTION fn_transicion_valida(p_desde INT, p_hacia INT)
 RETURNS TINYINT
 DETERMINISTIC
 BEGIN
@@ -181,7 +199,7 @@ END$$
 DELIMITER ;
 --VALIDAR FORMATO UUID v4
 DELIMITER $$
-CREATE OR REPLACE FUNCTION fn_validar_uuid_v4(p_uuid CHAR(36))
+CREATE FUNCTION fn_validar_uuid_v4(p_uuid CHAR(36))
 RETURNS TINYINT
 DETERMINISTIC
 BEGIN
@@ -190,7 +208,7 @@ END$$
 DELIMITER ;
 --LIMPIA TIPO DE MEDIA
 DELIMITER $$
-CREATE OR REPLACE FUNCTION fn_media_tipo_normalizado(p_tipo VARCHAR(100))
+CREATE FUNCTION fn_media_tipo_normalizado(p_tipo VARCHAR(100))
 RETURNS VARCHAR(100)
 DETERMINISTIC
 BEGIN
@@ -206,7 +224,6 @@ CREATE TRIGGER trg_reportes_before_insert
 BEFORE INSERT ON Reportes
 FOR EACH ROW
 BEGIN
-    --Esado por defecto
     IF NEW.ID_Estado_Actual IS NULL THEN
         SET NEW.ID_Estado_Actual = fn_estado_id('Pendiente');
     END IF;
@@ -218,7 +235,6 @@ BEGIN
     IF NEW.Fecha_Reporte IS NULL AND NEW.Hora_Creado IS NOT NULL THEN
         SET NEW.Fecha_Reporte = DATE(NEW.Hora_Creado);
     END IF;
-    --Validar UUID v4
     IF fn_validar_uuid_v4(NEW.UUID_Cliente) = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'UUID_Cliente no es un UUID v4 válido.';
     END IF;
@@ -231,11 +247,9 @@ CREATE TRIGGER trg_reportes_before_update_estado
 BEFORE UPDATE ON Reportes
 FOR EACH ROW
 BEGIN
-    --Proteger UUID_Cliente de cambios
     IF NEW.UUID_Cliente <> OLD.UUID_Cliente THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'UUID_Cliente no puede ser modificado.';
     END IF;
-    --Validar transicion de estado
     IF NEW.ID_Estado_Actual <> OLD.ID_Estado_Actual THEN
         IF fn_transicion_valida(OLD.ID_Estado_Actual, NEW.ID_Estado_Actual) = 0 THEN
             SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Transición de estado no permitida.';
@@ -243,18 +257,6 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
-
---REGISTRO EN BITACORA AL CAMBIAR ESTADO
-DELIMITER $$
-CREATE TRIGGER trg_reportes_after_update_estado
-AFTER UPDATE ON Reportes
-FOR EACH ROW
-BEGIN
-    IF NEW.ID_Estado_Actual <> OLD.ID_Estado_Actual THEN
-        INSERT INTO Bitacora_reportes (Nombre_Administrador, Detalle, Actualizacion_Fecha, ID_Reporte, ID_Estado_Actual, RUT)
-        VALUES (NULL,COALESCE(@comentario,CONCAT('Cambio de estado: ', OLD.ID_Estado_Actual, ' a ', NEW.ID_Estado_Actual)), CURRENT_TIMESTAMP, NEW.ID_Reporte, NEW.ID_Estado_Actual, @actor_rut);
-    END IF;
-END$$
 
 --NORMALIZAR TIPO DE MULTIMEDIA
 DELIMITER $$
@@ -265,3 +267,148 @@ BEGIN
     SET NEW.Tipo_Multimedia = fn_media_tipo_normalizado(NEW.Tipo_Multimedia);
 END$$
 DELIMITER ;
+
+--PROCEDIMIENTOS ALMACENADOS
+
+--INSERTAR UN REPORTE VALIDANDO AREA/SEVERIDAD Y EVITANDO DUPLICADOS POR PETICION IDEMPOTENCIA O UUID_CLIENTE
+DELIMITER $$
+CREATE PROCEDURE sp_insertar_reporte(
+    IN p_titulo VARCHAR(255),
+    IN p_descripcion TEXT,
+    IN p_fecha_reporte DATE,
+    IN p_uuid_cliente CHAR(36),
+    IN p_rut BIGINT,
+    IN p_id_severidad INT,
+    IN p_id_area INT,
+    IN p_id_estado_actual INT,
+    IN p_peticiones_idempotencia VARCHAR(255),
+    OUT p_id_reporte INT
+)
+BEGIN
+    -- Validar existencia de Area
+    IF NOT EXISTS (SELECT 1 FROM Areas WHERE ID_Area = p_id_area) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ID_Area no existe.';
+    END IF;
+    -- Validar existencia de Severidad
+    IF NOT EXISTS (SELECT 1 FROM Severidad WHERE ID_Severidad = p_id_severidad) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ID_Severidad no existe.';
+    END IF;
+    -- Evitar duplicados por Peticiones_Idempotencia
+    IF p_peticiones_idempotencia IS NOT NULL AND EXISTS (SELECT 1 FROM Reportes WHERE Peticiones_Idempotencia = p_peticiones_idempotencia) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Reporte con la misma Peticiones_Idempotencia ya existe.';
+    END IF;
+    -- Evitar duplicados por UUID_Cliente
+    IF p_uuid_cliente IS NOT NULL AND EXISTS (SELECT 1 FROM Reportes WHERE UUID_Cliente = p_uuid_cliente) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Reporte con el mismo UUID_Cliente ya existe.';
+    END IF;
+    -- Insertar el reporte
+    INSERT INTO Reportes (Titulo, Descripcion, Fecha_Reporte, UUID_Cliente, RUT, ID_Severidad, ID_Area, ID_Estado_Actual, Peticiones_Idempotencia)
+    VALUES (p_titulo, p_descripcion, p_fecha_reporte, p_uuid_cliente, p_rut, p_id_severidad, p_id_area, p_id_estado_actual, p_peticiones_idempotencia);
+    SET p_id_reporte = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+--CAMBIAR ESTADO CON VALIDACION Y REGISTRO EN BITACORA
+DELIMITER $$
+CREATE PROCEDURE sp_cambiar_estado_reporte(
+    IN p_id_reporte INT,
+    IN p_nuevo_estado INT,
+    IN p_nombre_administrador VARCHAR(255),
+    IN p_detalle TEXT,
+    IN p_rut BIGINT
+)
+BEGIN
+    DECLARE v_estado_actual INT;
+    -- Obtener estado actual
+    SELECT ID_Estado_Actual INTO v_estado_actual FROM Reportes WHERE ID_Reporte = p_id_reporte;
+    IF v_estado_actual IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Reporte no encontrado.';
+    END IF;
+    -- Validar transicion
+    IF fn_transicion_valida(v_estado_actual, p_nuevo_estado) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Transición de estado no permitida.';
+    END IF;
+    -- Actualizar estado
+    UPDATE Reportes SET ID_Estado_Actual = p_nuevo_estado WHERE ID_Reporte = p_id_reporte;
+    -- Registrar en bitacora
+    INSERT INTO Bitacora_reportes (Nombre_Administrador, Detalle, Actualizacion_Fecha, ID_Reporte, ID_Estado_Actual, RUT)
+    VALUES (p_nombre_administrador, COALESCE(p_detalle, CONCAT('Cambio de estado ',v_estado_actual, ' -> ',p_nuevo_estado)), CURRENT_TIMESTAMP, p_id_reporte, p_nuevo_estado, p_rut);
+    COMMIT;
+END$$
+DELIMITER ;
+
+--AGREGAR EVIDENCIA MULTIMEDIA A REPORTE
+DELIMITER $$
+CREATE PROCEDURE sp_agregar_multimedia_reporte(
+    IN p_id_reporte INT,
+    IN p_tipo_multimedia VARCHAR(100),
+    IN p_ruta VARCHAR(1024),
+    OUT p_id_multimedia INT
+)
+BEGIN
+    -- Validar existencia del reporte
+    IF NOT EXISTS (SELECT 1 FROM Reportes WHERE ID_Reporte = p_id_reporte) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Reporte no encontrado.';
+    END IF;
+    -- Insertar multimedia
+    INSERT INTO Multimedia_reportes (Tipo_Multimedia, ruta, ID_Reporte)
+    VALUES (fn_media_tipo_normalizado(p_tipo_multimedia), p_ruta, p_id_reporte);
+    SET p_id_multimedia = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+--MARCAR SINCRONIZADO
+DELIMITER $$
+CREATE PROCEDURE sp_marcar_sincronizado_reporte(
+    IN p_id_reporte INT
+)
+BEGIN
+    UPDATE Reportes
+    SET Hora_Sincronizado = CURRENT_TIMESTAMP
+    WHERE ID_Reporte = p_id_reporte;
+END$$
+DELIMITER ;
+
+--BUSCADOR DE REPORTES CON FILTROS OPCIONALES
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_reportes(
+    IN p_rut BIGINT,
+    IN p_id_area INT,
+    IN p_id_severidad INT,
+    IN p_id_estado_actual INT,
+    IN p_fecha_desde DATE,
+    IN p_fecha_hasta DATE
+)
+BEGIN
+    SELECT * FROM Reportes
+    WHERE (p_rut IS NULL OR RUT = p_rut)
+      AND (p_id_area IS NULL OR ID_Area = p_id_area)
+      AND (p_id_severidad IS NULL OR ID_Severidad = p_id_severidad)
+      AND (p_id_estado_actual IS NULL OR ID_Estado_Actual = p_id_estado_actual)
+      AND (p_fecha_desde IS NULL OR Fecha_Reporte >= p_fecha_desde)
+      AND (p_fecha_hasta IS NULL OR Fecha_Reporte <= p_fecha_hasta);
+END$$
+DELIMITER ;
+
+
+--PRUEBA TRIGGERS
+-- Asumimos que ID_Severidad=1 e ID_Area=1 ya existen.
+INSERT INTO Reportes (
+    Titulo, 
+    Descripcion, 
+    UUID_Cliente, 
+    RUT, 
+    ID_Severidad, 
+    ID_Area
+)
+VALUES (
+    'Reporte con UUID malo', 
+    'Esto es una prueba para el trigger de UUID',
+    'esto-no-es-un-uuid-v4',  -- <-- UUID inválido
+    21232263,                 -- <-- RUT de Esteban
+    1, 
+    1
+);
+
+DELETE FROM Reportes 
+WHERE ID_Reporte = 1;
