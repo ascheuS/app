@@ -4,7 +4,10 @@ import os
 
 # 1. ESTA ES LA LÍNEA QUE DEBES CAMBIAR
 # Apunta directamente a tu base de datos MySQL de reportes_mineria.
-DATABASE_URL = "mysql+pymysql://miner_user:gogeta2003@localhost:3307/reportes_mineria"
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL no está configurada en las variables de entorno.")
 
 
 # El 'connect_args' es solo para SQLite, ya no lo necesitas.

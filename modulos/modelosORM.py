@@ -8,13 +8,13 @@ from database import Base
 
 # --- Modelos de Catálogo (Los que no dependen de otros) ---
 
-class Cargo(Base):
+class Cargos(Base):
     __tablename__ = "Cargos"
     ID_Cargo = Column(Integer, primary_key=True, index=True)
     Nombre_cargo = Column(String(100), nullable=False)
     
     # Relación inversa: Un cargo puede tener muchos usuarios
-    usuarios = relationship("Usuario", back_populates="cargo_rel")
+    usuarios = relationship("Usuarios", back_populates="cargo_rel")
 
 class Estado_trabajador(Base):
     __tablename__ = "Estado_trabajador"
@@ -22,7 +22,7 @@ class Estado_trabajador(Base):
     Nombre_estado_trabajador = Column(String(100), nullable=False)
     
     # Relación inversa: Un estado puede tener muchos usuarios
-    usuarios = relationship("Usuario", back_populates="estado_trabajador_rel")
+    usuarios = relationship("Usuarios", back_populates="estado_trabajador_rel")
 
 class Areas(Base):
     __tablename__ = "Areas"
@@ -54,18 +54,18 @@ class Estados_reportes(Base):
 
 # --- Modelos Principales (Los que dependen de otros) ---
 
-class Usuario(Base):
+class Usuarios(Base):
     __tablename__ = "Usuarios"
     RUT = Column(BIGINT, primary_key=True, index=True)
     Nombre = Column(String(100), nullable=False)
     Apellido_1 = Column(String(100), nullable=False)
     Apellido_2 = Column(String(100), nullable=True)
-    Hashed_password = Column(String(255), nullable=False)
-    Cargo = Column(Integer, ForeignKey("Cargos.ID_Cargo"), nullable=False)
+    Contraseña = Column(String(255), nullable=False)
+    ID_Cargo = Column(Integer, ForeignKey("Cargos.ID_Cargo"), nullable=False)
     ID_Estado_trabajador = Column(Integer, ForeignKey("Estado_trabajador.ID_Estado_trabajador"), nullable=False)
 
     # --- Relaciones ---
-    cargo_rel = relationship("Cargo", back_populates="usuarios")
+    cargo_rel = relationship("Cargos", back_populates="usuarios")
     estado_trabajador_rel = relationship("Estado_trabajador", back_populates="usuarios")
     
     # Relaciones inversas
@@ -77,6 +77,7 @@ class Reportes(Base):
     ID_Reporte = Column(Integer, primary_key=True, autoincrement=True)
     Titulo = Column(String(200), nullable=False)
     Descripcion = Column(Text, nullable=False)
+    Fecha_Reporte = Column(Date, nullable=False)
     UUID_Cliente = Column(String(100), nullable=False, unique=True)
     Hora_Creacdo = Column(DateTime, nullable=False, server_default=func.now())
     Hora_Sincronizado = Column(DateTime, nullable=True)
@@ -90,7 +91,7 @@ class Reportes(Base):
     ID_Estado_Actual = Column(Integer, ForeignKey("Estados_reportes.ID_Estado_Actual"))
 
     # --- Relaciones ---
-    usuario_rel = relationship("Usuario", back_populates="reportes")
+    usuario_rel = relationship("Usuarios", back_populates="reportes")
     severidad_rel = relationship("Severidad", back_populates="reportes")
     area_rel = relationship("Areas", back_populates="reportes")
     estado_actual_rel = relationship("Estados_reportes", back_populates="reportes")
@@ -124,7 +125,7 @@ class Bitacora_reportes(Base):
     # --- Relaciones ---
     estado_actual_rel = relationship("Estados_reportes", back_populates="bitacoras")
     reporte_rel = relationship("Reportes", back_populates="bitacoras")
-    usuario_rel = relationship("Usuario", back_populates="bitacoras")
+    usuario_rel = relationship("Usuarios", back_populates="bitacoras")
 
 class Estado_transicion(Base):
     __tablename__ = "Estado_transicion"

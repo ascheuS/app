@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\Cristobal Artus\OneDrive\Escritorio\Proyecto SIGRA\app\mi_entorno_virtual
+set VIRTUAL_ENV=C:\Users\bytba\Desktop\Proyecto\SIGRA\app-1\mi_entorno_virtual
 
 if not defined PROMPT set PROMPT=$P$G
 

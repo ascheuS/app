@@ -1,19 +1,28 @@
 from fastapi import FastAPI
-from routes import trabajadores, usuarios, reportes  # Importamos los routers
+from dotenv import load_dotenv  # <-- 1. IMPORTA load_dotenv
+
+# 2. LLAMA a la función INMEDIATAMENTE
+# Esto carga todas las variables de tu .env
+load_dotenv()
+
+# 3. AHORA SÍ, importa el resto de tus módulos
+# (Porque ahora la SECRET_KEY ya existe en el entorno)
+from routes import auth
+from database import engine, Base
+
+# Crear las tablas en la base de datos (si no existen) da Problemas
+#Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="SIGRA - Sistema de Reportes de Seguridad",
-    description="API para gestionar trabajadores, usuarios y reportes de seguridad minera",
+    title="SIGRA API",
+    description="API para el sistema de gestion reportes de seguridad minera",
     version="1.0.0"
 )
 
-# Incluimos los routers con prefijo y tags (ayuda en la documentación /docs)
-app.include_router(trabajadores.router, prefix="/trabajadores", tags=["Trabajadores"])
-app.include_router(usuarios.router, prefix="/usuarios", tags=["Usuarios"])
-app.include_router(reportes.router, prefix="/reportes", tags=["Reportes"])
+# Incluimos los routers
+app.include_router(auth.router)
 
 # Ruta base de prueba
 @app.get("/")
 def root():
     return {"message": "Bienvenido al API de SIGRA"}
-

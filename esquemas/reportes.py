@@ -26,4 +26,4 @@ class Reporte(BaseModel):
     id_estado_actual: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
