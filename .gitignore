@@ -1,41 +1,49 @@
-# Docker
-docker-compose.yml
-Dockerfile
-.dockerignore
-
-# Base de datos MySQL (contenedor)
-db_data/
-*.sql
-
-# Entorno virtual Python
-venv/
-__pycache__/
-*.pyc
-
-# dependencias Python
-*.egg-info/
-*.whl
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# React Native
-*.log
-*.metro
-.expo
-
-# Archivos .env
-.env*
-
-# TypeScript
-*.tsbuildinfo
-
-# Archivos de sistema
+# ========================
+# General / OS / Secretos
+# ========================
 .DS_Store
-
-# Archivos de compilación
-/build/
 *.pem
+*.log
+.env* 
+# ===========================
+# Python / FastAPI (APP-1)
+# ===========================
+APP-1/venv/
+APP-1/mi_entorno_virtual/ # Agregado por si acaso
+APP-1/__pycache__/
+APP-1/*.pyc
+APP-1/*.egg-info/
+APP-1/*.whl
+APP-1/db_data/ 
+# Asumiendo que no quieres los datos de la BD en Git
+# Mantén APP-1/*.sql si quieres versionar tus scripts de BD
+
+# ==================================
+# Node.js / React Native (mobile-app)
+# ==================================
+mobile-app/node_modules/
+mobile-app/.expo/
+mobile-app/dist/
+mobile-app/web-build/
+mobile-app/expo-env.d.ts
+mobile-app/.kotlin/
+mobile-app/*.orig.*
+mobile-app/*.jks
+mobile-app/*.p8
+mobile-app/*.p12
+mobile-app/*.key
+mobile-app/*.mobileprovision
+mobile-app/.metro*
+mobile-app/npm-debug.*
+mobile-app/yarn-debug.*
+mobile-app/yarn-error.*
+mobile-app/*.tsbuildinfo
+mobile-app/app-example # Si esto es solo un ejemplo
+mobile-app/ios/ # Carpeta nativa generada
+mobile-app/android/ # Carpeta nativa generada
+
+# ========================
+# Docker
+# ========================
+# (Mantén docker-compose.yml, Dockerfile, .dockerignore *a menos que* quieras ignorarlos específicamente)
+# Considera agregar archivos del contexto de build si es necesario, ej: build/
