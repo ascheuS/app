@@ -41,6 +41,8 @@ mobile-app/*.tsbuildinfo
 mobile-app/app-example # Si esto es solo un ejemplo
 mobile-app/ios/ # Carpeta nativa generada
 mobile-app/android/ # Carpeta nativa generada
+# Ignorar archivo de configuración específico del frontend
+mobile-app/src/constants/config.ts
 
 # ========================
 # Docker
