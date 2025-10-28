@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { Report } from '../../../types/reports';
+import { Report } from '../../../types/reportes';
 import { mockReportService } from '../../../mocks/reports';
 
 /**

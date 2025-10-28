@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
-import { SyncStatus } from '../../../types/reports';
+import { SyncStatus } from '../../../types/reportes';
 
 /**
  * SyncDashboardScreen - Panel de control de sincronización

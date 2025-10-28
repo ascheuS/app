@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { CreateReportDTO } from '../../../types/reports';
+import { CreateReportDTO } from '../../../types/reportes';
 import { mockReportService } from '../../../mocks/reports';
 
 export const CreateReportScreen = () => {

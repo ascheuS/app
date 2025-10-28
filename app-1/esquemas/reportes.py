@@ -20,7 +20,7 @@ class Reporte(BaseModel):
     fecha_reporte: date
     hora_creado: datetime
     hora_sincronizado: datetime | None = None
-    rut: int
+    RUT: int
     id_severidad: int
     id_area: int
     id_estado_actual: int

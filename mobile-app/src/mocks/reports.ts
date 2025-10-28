@@ -1,4 +1,4 @@
-import { CreateReportDTO } from '../types/reports';
+import { CreateReportDTO } from '../types/reportes';
 
 // Datos de ejemplo para desarrollo
 export const mockReports = [
