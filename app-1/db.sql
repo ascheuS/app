@@ -30,6 +30,7 @@ CREATE TABLE Usuarios(
     `Contraseña` VARCHAR(255) NOT NULL,
     `ID_Cargo` INT,
     `ID_Estado_trabajador` INT,
+    `Primer_inicio_sesion` TINYINT NOT NULL DEFAULT 1,
     PRIMARY KEY (`RUT`),
     FOREIGN KEY (`ID_Cargo`) REFERENCES Cargos(`ID_Cargo`) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (`ID_Estado_trabajador`) REFERENCES Estado_trabajador(`ID_Estado_trabajador`) ON UPDATE CASCADE ON DELETE SET NULL
@@ -390,6 +391,72 @@ BEGIN
 END$$
 DELIMITER ;
 
+
+-- PROCEDIMIENTO PARA CREAR USUARIO
+DELIMITER $$
+CREATE PROCEDURE sp_crear_usuario(
+    IN p_rut BIGINT,
+    IN p_nombre VARCHAR(60),
+    IN p_apellido_1 VARCHAR(80),
+    IN p_apellido_2 VARCHAR(80),
+    IN p_password_hash VARCHAR(255),
+    IN p_id_cargo INT,
+    IN p_id_estado_trabajador INT
+)
+BEGIN
+    -- Validar que el RUT no exista
+    IF EXISTS (SELECT 1 FROM Usuarios WHERE RUT = p_rut) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El RUT ya está registrado.';
+    END IF;
+    -- Validar que el cargo existe
+    IF NOT EXISTS (SELECT 1 FROM Cargos WHERE ID_Cargo = p_id_cargo) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El ID_Cargo no existe.';
+    END IF;
+    -- Validar que el estado existe
+    IF NOT EXISTS (SELECT 1 FROM Estado_trabajador WHERE ID_Estado_trabajador = p_id_estado_trabajador) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El ID_Estado_trabajador no existe.';
+    END IF;
+    
+    -- Insertar el usuario con el hash proporcionado
+    INSERT INTO Usuarios (
+        RUT,
+        Nombre,
+        Apellido_1,
+        Apellido_2,
+        Contraseña,
+        ID_Cargo,
+        ID_Estado_trabajador,
+        Primer_inicio_sesion
+    ) VALUES (
+        p_rut,
+        p_nombre,
+        p_apellido_1,
+        p_apellido_2,
+        p_password_hash,
+        p_id_cargo,
+        p_id_estado_trabajador,
+        1
+    );
+END$$
+DELIMITER ;
+
+-- PROCEDIMIENTO PARA ACTUALIZAR ESTADO DE PRIMER INICIO
+DELIMITER $$
+CREATE PROCEDURE sp_actualizar_primer_inicio(
+    IN p_rut BIGINT
+)
+BEGIN
+    -- Validar que el usuario existe
+    IF NOT EXISTS (SELECT 1 FROM Usuarios WHERE RUT = p_rut) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Usuario no encontrado.';
+    END IF;
+    
+    -- Marcar primer inicio como completado
+    UPDATE Usuarios 
+    SET Primer_inicio_sesion = 0
+    WHERE RUT = p_rut;
+END$$
+DELIMITER ;
 
 --PRUEBA TRIGGERS
 -- Asumimos que ID_Severidad=1 e ID_Area=1 ya existen.

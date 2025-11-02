@@ -63,6 +63,7 @@ class Usuarios(Base):
     Contraseña = Column(String(255), nullable=False)
     ID_Cargo = Column(Integer, ForeignKey("Cargos.ID_Cargo"), nullable=False)
     ID_Estado_trabajador = Column(Integer, ForeignKey("Estado_trabajador.ID_Estado_trabajador"), nullable=False)
+    Primer_inicio_sesion = Column(Integer, nullable=False, default=1)
 
     # --- Relaciones ---
     cargo_rel = relationship("Cargos", back_populates="usuarios")
