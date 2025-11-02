@@ -7,6 +7,9 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 // import { StackNavigationProp } from '@react-navigation/stack';
 // import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../context/AuthContext'; // Importa el hook de autenticación
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 
 // Ya no necesitamos definir tipos para navigation si no se usa
 // type HomeScreenNavigationProp = ...
@@ -15,7 +18,8 @@ import { useAuth } from '../context/AuthContext'; // Importa el hook de autentic
 // El componente ya no necesita recibir 'navigation' como prop
 const HomeScreen: React.FC = () => {
   // Obtiene la función signOut del contexto
-  const { signOut } = useAuth();
+  const { signOut, userCargo } = useAuth() as any;
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // handleLogout ahora solo necesita llamar a signOut
   const handleLogout = async () => {
@@ -31,10 +35,17 @@ const HomeScreen: React.FC = () => {
       <Text style={styles.subtitle}>Pantalla principal de la aplicación.</Text>
       {/* --- Aquí puedes empezar a agregar la funcionalidad de reportes --- */}
       <Text style={styles.placeholder}>
-        (Próximamente: Lista de reportes, botón para crear nuevo reporte)
+        (Próximamente: Lista de reportes)
       </Text>
+      {/* Mostrar botón Crear Reporte sólo para trabajadores (no admin) */}
+      {userCargo !== 1 && (
+        <Button title="Crear Reporte" onPress={() => navigation.navigate('CreateReport')} />
+      )}
       {/* Separador visual */}
       <View style={styles.separator} />
+      {userCargo === 1 && (
+        <Button title="Gestión de usuarios" onPress={() => navigation.navigate('AdminUsers')} />
+      )}
       <Button title="Cerrar Sesión" onPress={handleLogout} color="#FF3B30" />
     </View>
   );

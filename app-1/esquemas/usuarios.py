@@ -14,6 +14,12 @@ class UserCreate(BaseModel):
 class PasswordChange(BaseModel):
     password: str
     new_password: str
+    # Opcional: permitir indicar el RUT cuando el usuario está en primer inicio
+    # (el backend originalmente devuelve el marcador "primer_inicio" en lugar
+    # de un JWT). Si se provee RUT y no hay Authorization válido, se usará
+    # este RUT para localizar al usuario y permitir el cambio sólo si es
+    # primer inicio de sesión.
+    RUT: int | None = None
 
 #Lo q la app manda pa hacer login
 class UserLogin(BaseModel):
@@ -35,10 +41,15 @@ class UserBase(BaseModel):
     Nombre: str
     Apellido_1: str
     Apellido_2: str | None = None
-    Cargo: int
+    ID_Cargo: int
     ID_Estado_trabajador: int
     
 #Schema de LECTURA: Hereda de UserBase y SÍ puede leer desde el ORM
 class User(UserBase):
     class Config:
         from_attributes = True 
+
+
+# Schema para actualizar el estado del usuario (admin)
+class UserStateUpdate(BaseModel):
+    ID_Estado_trabajador: int

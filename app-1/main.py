@@ -8,6 +8,7 @@ load_dotenv()
 # 3. AHORA SÍ, importa el resto de tus módulos
 # (Porque ahora la SECRET_KEY ya existe en el entorno)
 from routes import auth
+from routes import reportes
 from database import engine, Base
 
 # Crear las tablas en la base de datos (si no existen) da Problemas
@@ -21,6 +22,7 @@ app = FastAPI(
 
 # Incluimos los routers
 app.include_router(auth.router)
+app.include_router(reportes.router)
 
 # Ruta base de prueba
 @app.get("/")

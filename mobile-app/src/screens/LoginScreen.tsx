@@ -11,10 +11,16 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC = () => {
-  const { signIn } = useAuth(); // Obtiene la función signIn del contexto
-  const [rut, setRut] = React.useState<string>(''); // Usa React.useState
+  const { signIn } = useAuth();
+  const navigation = useNavigation<LoginScreenNavigationProp>();
+  const [rut, setRut] = React.useState<string>('');
   const [password, setPassword] = React.useState<string>('');
   const [error, setError] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -35,24 +41,52 @@ const LoginScreen: React.FC = () => {
       const response = await authService.login(rutNumber, password);
 
       if (response && response.access_token) {
-        await signIn(response.access_token);
+        const isPrimerInicio = response.access_token === 'primer_inicio' || response.require_password_change === true;
+        if (isPrimerInicio) {
+          // Validar rutNumber antes de navegar
+          if (!Number.isFinite(rutNumber) || Number.isNaN(rutNumber)) {
+            setError('RUT inválido para cambio de contraseña');
+            Alert.alert('Error', 'RUT inválido para cambio de contraseña');
+          } else {
+            // Redirigir a la pantalla de cambio de contraseña y pasar el RUT
+            navigation.navigate('ChangePassword', { rut: rutNumber });
+          }
+        } else {
+          await signIn(response.access_token);
+        }
       } else {
         setError('Respuesta inesperada del servidor.');
         Alert.alert('Error', 'Respuesta inesperada del servidor.');
       }
     } catch (error: any) {
+      // Log interno para debugging (no se muestra al usuario)
       console.error('Error en la llamada a la API:', error);
-      
+
+      // Mapear errores del backend a mensajes amigables para el usuario.
+      // Evitamos mostrar el `detail` exacto que devuelve el servidor.
+      let userMessage = 'No se pudo iniciar sesión. Intenta nuevamente más tarde.';
+
       if (error.response) {
-        const detail = error.response.data?.detail || 'Error desconocido del servidor';
-        setError(detail);
-        Alert.alert('Error de Inicio de Sesión', detail);
+        const status = error.response.status;
+        if (status === 401) {
+          userMessage = 'RUT o contraseña incorrectos.';
+        } else if (status === 403) {
+          userMessage = 'La cuenta está inactiva. Contacta al administrador.';
+        } else if (status === 400) {
+          userMessage = 'Datos inválidos. Revisa el RUT y la contraseña.';
+        } else if (status >= 500) {
+          userMessage = 'Error del servidor. Intenta más tarde.';
+        }
+
+        setError(userMessage);
+        Alert.alert('Error de Inicio de Sesión', userMessage);
       } else if (error.request) {
-        setError('No se pudo conectar al servidor. Verifica tu conexión.');
-        Alert.alert('Error de Red', 'No se pudo conectar al servidor.');
+        userMessage = 'No se pudo conectar al servidor. Verifica tu conexión.';
+        setError(userMessage);
+        Alert.alert('Error de Red', userMessage);
       } else {
-        setError('Error al procesar la solicitud.');
-        Alert.alert('Error', error.message || 'Error inesperado.');
+        setError(userMessage);
+        Alert.alert('Error', userMessage);
       }
     } finally {
       setIsLoading(false);

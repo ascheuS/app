@@ -1,5 +1,9 @@
 export type RootStackParamList = {
   Home: undefined;
   Login: undefined;
-  // Agrega aquí otras pantallas y sus parámetros
+  ChangePassword: { rut: number } | undefined;
+  AdminUsers: undefined;
+  AddUser: undefined;
+  CreateReport: undefined;
+  AdminHome: undefined;
 };
