@@ -8,7 +8,7 @@ load_dotenv()
 # 3. AHORA SÍ, importa el resto de tus módulos
 # (Porque ahora la SECRET_KEY ya existe en el entorno)
 from routes import auth
-from routes import reportes
+from routes import reportesRoute as reportes
 from database import engine, Base
 
 # Crear las tablas en la base de datos (si no existen) da Problemas

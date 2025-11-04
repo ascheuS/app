@@ -19,7 +19,7 @@ export interface CreateReportDTO {
     descripcion: string;
     fecha_reporte: string; // Formato 'YYYY-MM-DD'
     uuid_cliente: string;
-    peticion_idempotencia: string;
+    peticion_idempotencia: string | null;
     id_area: number;
     id_severidad: number;
 }
@@ -35,4 +35,15 @@ export interface SyncStatus {
     isOnline: boolean;
     lastSync: string | null;
     pendingSyncs: number;
+}
+
+// Interfaces para catálogos
+export interface Area {
+    ID_Area: number;
+    Nombre_area: string;
+}
+
+export interface Severidad {
+    ID_Severidad: number;
+    Nombre_severidad: string;
 }

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { API_CONFIG } from '../constants/config';
 import { LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse, CreateUserRequest, CreateUserResponse } from '../types/auth';
+import { Area, Severidad, CreateReportDTO } from '../types/reportes';
 import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
@@ -19,6 +20,11 @@ export const authService = {
             const response = await api.post<LoginResponse>('/auth/login', loginData);
             console.log('✅ Respuesta del servidor:', response.data);
             console.log('🔑 Token recibido:', response.data.access_token);
+            
+            // Guardar el token
+            await SecureStore.setItemAsync('userToken', response.data.access_token);
+            console.log('💾 Token guardado en SecureStore');
+            
             return response.data;
         } catch (error: any) {
             console.error('❌ Error en login:', error.response?.data || error.message);
@@ -84,7 +90,7 @@ export const authService = {
 export default api;
 
 export const reportService = {
-    createReport: async (reportData: any) => {
+    createReport: async (reportData: CreateReportDTO) => {
         try {
             const token = await SecureStore.getItemAsync('userToken');
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -95,18 +101,38 @@ export const reportService = {
             throw error;
         }
     },
-    getAreas: async () => {
+    getAreas: async (): Promise<Area[]> => {
         try {
-            const response = await api.get('/reportes/catalogos/areas');
+            const token = await SecureStore.getItemAsync('userToken');
+            console.log('🔑 Token para áreas:', token ? 'Presente' : 'No encontrado');
+            
+            if (!token) {
+                throw new Error('No hay token disponible');
+            }
+            
+            const headers = { Authorization: `Bearer ${token}` };
+            console.log('📡 Solicitando áreas con token');
+            const response = await api.get<Area[]>('/reportes/catalogos/areas', { headers });
+            console.log('✅ Áreas recibidas:', response.data);
             return response.data;
         } catch (error: any) {
             console.error('❌ Error al obtener areas:', error.response?.data || error.message);
             throw error;
         }
     },
-    getSeveridades: async () => {
+    getSeveridades: async (): Promise<Severidad[]> => {
         try {
-            const response = await api.get('/reportes/catalogos/severidad');
+            const token = await SecureStore.getItemAsync('userToken');
+            console.log('🔑 Token para severidades:', token ? 'Presente' : 'No encontrado');
+            
+            if (!token) {
+                throw new Error('No hay token disponible');
+            }
+            
+            const headers = { Authorization: `Bearer ${token}` };
+            console.log('📡 Solicitando severidades con token');
+            const response = await api.get<Severidad[]>('/reportes/catalogos/severidad', { headers });
+            console.log('✅ Severidades recibidas:', response.data);
             return response.data;
         } catch (error: any) {
             console.error('❌ Error al obtener severidades:', error.response?.data || error.message);
