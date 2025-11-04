@@ -11,6 +11,23 @@ class ReporteCreate(BaseModel):
     peticion_idempotencia: str | None = None
     id_severidad: int
     id_area: int
+# --- Schemas para Catálogos ---
+class AreaSchema(BaseModel):
+    ID_Area: int
+    Nombre_area: str
+    Descripcion: str | None = None
+
+    class Config:
+        from_attributes = True
+
+class SeveridadSchema(BaseModel):
+    ID_Severidad: int
+    Nombre_severidad: str
+    Descripcion: str | None = None
+
+    class Config:
+        from_attributes = True
+
 # --- Schema para MOSTRAR un Reporte ---
 # Esto es lo que el servidor devuelve a la App
 class Reporte(BaseModel):

@@ -116,29 +116,12 @@ CREATE TABLE Estado_transicion(
 );
 
 
---INSERTS
+-- INSERTS
 INSERT INTO Cargos (ID_Cargo, Nombre_Cargo) VALUES
 (1, 'Administrador'),
 (2, 'Trabajador');
 
-INSERT INTO Usuarios (
-    RUT, 
-    Nombre, 
-    Apellido_1, 
-    Apellido_2, 
-    Contraseña, 
-    ID_Cargo, 
-    ID_Estado_trabajador
-) 
-VALUES (
-    21232263, 
-    'Esteban', 
-    'Rojas', 
-    'Calderon', 
-    'el_hash_de_bcrypt_va_aqui', 
-    1, 
-    1
-);
+
 INSERT INTO Estado_trabajador (ID_Estado_trabajador, Nombre_Estado) VALUES
 (1, 'Activo'),
 (2, 'Inactivo');
@@ -169,7 +152,29 @@ INSERT INTO Estado_transicion (Estado_Desde, Estado_Hacia) VALUES
 (1, 2), -- De Pendiente a Aprobado
 (1, 3); -- De Pendiente a Rechazado
 
---FUNCIONES
+INSERT INTO Usuarios (
+    RUT, 
+    Nombre, 
+    Apellido_1, 
+    Apellido_2, 
+    Contraseña, 
+    ID_Cargo, 
+    ID_Estado_trabajador,
+    Primer_inicio_sesion
+    
+) 
+VALUES (
+    21232263, 
+    'Esteban', 
+    'Rojas', 
+    'Calderon', 
+    '$2b$12$wsXK1e7Jtp/bE2sJqJi.NeV1oSzQf6nciDaL7hgJY0QMqM0zOdH22', 
+    1, 
+    1,
+    0
+);
+
+-- FUNCIONES
 
 -- OBTENER ID POR NOMBRE
 DELIMITER //  
@@ -186,7 +191,7 @@ BEGIN
 END //
 DELIMITER ;
 
---VALIDAR REGLA EN ESTADO_TRANSICION
+-- VALIDAR REGLA EN ESTADO_TRANSICION
 DELIMITER $$
 CREATE FUNCTION fn_transicion_valida(p_desde INT, p_hacia INT)
 RETURNS TINYINT
@@ -198,7 +203,7 @@ BEGIN
   );
 END$$
 DELIMITER ;
---VALIDAR FORMATO UUID v4
+-- VALIDAR FORMATO UUID v4
 DELIMITER $$
 CREATE FUNCTION fn_validar_uuid_v4(p_uuid CHAR(36))
 RETURNS TINYINT
@@ -207,7 +212,7 @@ BEGIN
     RETURN p_uuid REGEXP '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$';
 END$$
 DELIMITER ;
---LIMPIA TIPO DE MEDIA
+-- LIMPIA TIPO DE MEDIA
 DELIMITER $$
 CREATE FUNCTION fn_media_tipo_normalizado(p_tipo VARCHAR(100))
 RETURNS VARCHAR(100)
@@ -217,9 +222,9 @@ BEGIN
 END$$
 DELIMITER ;
 
---TRIGGERS
+-- TRIGGERS
 
---REPORTES - ESTADO POR DEFECTO Y VALIDACION
+-- REPORTES - ESTADO POR DEFECTO Y VALIDACION
 DELIMITER $$
 CREATE TRIGGER trg_reportes_before_insert
 BEFORE INSERT ON Reportes
@@ -242,7 +247,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---VALIDAR TRANSICION DE ESTADO
+-- VALIDAR TRANSICION DE ESTADO
 DELIMITER $$
 CREATE TRIGGER trg_reportes_before_update_estado
 BEFORE UPDATE ON Reportes
@@ -259,7 +264,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---NORMALIZAR TIPO DE MULTIMEDIA
+-- NORMALIZAR TIPO DE MULTIMEDIA
 DELIMITER $$
 CREATE TRIGGER trg_multimedia_before_insert
 BEFORE INSERT ON Multimedia_reportes
@@ -269,9 +274,9 @@ BEGIN
 END$$
 DELIMITER ;
 
---PROCEDIMIENTOS ALMACENADOS
+-- PROCEDIMIENTOS ALMACENADOS
 
---INSERTAR UN REPORTE VALIDANDO AREA/SEVERIDAD Y EVITANDO DUPLICADOS POR PETICION IDEMPOTENCIA O UUID_CLIENTE
+-- INSERTAR UN REPORTE VALIDANDO AREA/SEVERIDAD Y EVITANDO DUPLICADOS POR PETICION IDEMPOTENCIA O UUID_CLIENTE
 DELIMITER $$
 CREATE PROCEDURE sp_insertar_reporte(
     IN p_titulo VARCHAR(255),
@@ -309,7 +314,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---CAMBIAR ESTADO CON VALIDACION Y REGISTRO EN BITACORA
+-- CAMBIAR ESTADO CON VALIDACION Y REGISTRO EN BITACORA
 DELIMITER $$
 CREATE PROCEDURE sp_cambiar_estado_reporte(
     IN p_id_reporte INT,
@@ -338,7 +343,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---AGREGAR EVIDENCIA MULTIMEDIA A REPORTE
+-- AGREGAR EVIDENCIA MULTIMEDIA A REPORTE
 DELIMITER $$
 CREATE PROCEDURE sp_agregar_multimedia_reporte(
     IN p_id_reporte INT,
@@ -358,7 +363,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---MARCAR SINCRONIZADO
+-- MARCAR SINCRONIZADO
 DELIMITER $$
 CREATE PROCEDURE sp_marcar_sincronizado_reporte(
     IN p_id_reporte INT
@@ -370,7 +375,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---BUSCADOR DE REPORTES CON FILTROS OPCIONALES
+-- BUSCADOR DE REPORTES CON FILTROS OPCIONALES
 DELIMITER $$
 CREATE PROCEDURE sp_buscar_reportes(
     IN p_rut BIGINT,
@@ -458,7 +463,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---PRUEBA TRIGGERS
+-- PRUEBA TRIGGERS
 -- Asumimos que ID_Severidad=1 e ID_Area=1 ya existen.
 INSERT INTO Reportes (
     Titulo, 
@@ -476,6 +481,3 @@ VALUES (
     1, 
     1
 );
-
-DELETE FROM Reportes 
-WHERE ID_Reporte = 1;
