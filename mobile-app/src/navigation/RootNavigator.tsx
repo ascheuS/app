@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext'; // Importa el hook useAuth
 import LoginScreen from '../screens/LoginScreen';
@@ -14,18 +14,29 @@ import { RootStackParamList } from './types';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-const RootNavigator = () => {
-  const { userToken, isLoading, userCargo } = useAuth() as any; // Obtiene el estado del contexto
+declare global {
+  var navigation: NavigationContainerRef<any> | null;
+}
 
-  // Podrías mostrar un Loading aquí también si isLoading es true,
-  // aunque AuthProvider ya lo hace, doble seguridad no está mal.
+const RootNavigator = () => {
+  const { userToken, isLoading, userCargo } = useAuth() as any;
+  const navigationRef = useRef<NavigationContainerRef<any>>(null);
+
+  // Set up global navigation reference
+  React.useEffect(() => {
+    global.navigation = navigationRef.current;
+    return () => {
+      global.navigation = null;
+    };
+  }, []);
+
   if (isLoading) {
-     return <LoadingScreen />;
+    return <LoadingScreen />;
   }
 
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator>
         {userToken == null ? (
           <>

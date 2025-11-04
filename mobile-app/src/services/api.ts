@@ -9,6 +9,43 @@ const api = axios.create({
     timeout: API_CONFIG.TIMEOUT,
 });
 
+// Interceptor para manejar tokens expirados
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        // Si el error es 401 y no es un reintento
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            console.log('🔄 Token expirado, limpiando token y storage...');
+            
+            // Limpiar el token
+            await SecureStore.deleteItemAsync('userToken');
+            
+            // Redireccionar a login
+            // Nota: necesitamos acceso a la navegación aquí
+            // Una solución temporal es emitir un evento que el AuthContext escuchará
+            if (global.navigation) {
+                console.log('🔀 Redirigiendo a login por token expirado');
+                global.navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// Log de configuración inicial
+console.log('🌐 API configurada con:', {
+    baseURL: API_CONFIG.BASE_URL,
+    timeout: API_CONFIG.TIMEOUT
+});
+
 export const authService = {
     login: async (rut: number, password: string): Promise<LoginResponse> => {
         try {
@@ -104,14 +141,14 @@ export const reportService = {
     getAreas: async (): Promise<Area[]> => {
         try {
             const token = await SecureStore.getItemAsync('userToken');
-            console.log('🔑 Token para áreas:', token ? 'Presente' : 'No encontrado');
+            console.log('🔑 Token completo para áreas:', token);
             
             if (!token) {
                 throw new Error('No hay token disponible');
             }
             
             const headers = { Authorization: `Bearer ${token}` };
-            console.log('📡 Solicitando áreas con token');
+            console.log('📡 Headers completos:', headers);
             const response = await api.get<Area[]>('/reportes/catalogos/areas', { headers });
             console.log('✅ Áreas recibidas:', response.data);
             return response.data;
