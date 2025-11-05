@@ -1,117 +1,141 @@
 // src/context/AuthContext.tsx
+// src/context/AuthContext.tsx
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import LoadingScreen from '../screens/LoadingScreen'; // Necesitamos la pantalla de carga
+import LoadingScreen from '../screens/LoadingScreen';
+// BORRAMOS 'api' de aquí, ya no lo necesitamos para esto
+import { sincronizarCatalogos } from '../services/syncService';
+import { initDatabase } from '../db/database';
+import { jwtDecode } from 'jwt-decode'; // <-- 1. IMPORTA LA LIBRERÍA
+
+// Define el tipo de dato de tu payload
+interface JwtPayload {
+  rut: number;
+  cargo: number;
+  exp: number;
+  // ... otros campos si los tienes
+}
 
 type AuthContextType = {
-  userToken: string | null;
-  isLoading: boolean;
-  signIn: (token: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  userCargo?: number | null;
+  userToken: string | null;
+  isLoading: boolean;
+  signIn: (token: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  userCargo?: number | null;
+  userRUT?: number | null; // <-- Lo mantenemos
 };
 
-// Crea el contexto con un valor inicial undefined
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Crea el Provider (el que manejará el estado)
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [userToken, setUserToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Empieza cargando
-  const [userCargo, setUserCargo] = useState<number | null>(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true); 
+  const [userCargo, setUserCargo] = useState<number | null>(null);
+  const [userRUT, setUserRUT] = useState<number | null>(null); // <-- Lo mantenemos
 
-  useEffect(() => {
-    // Revisa el token al iniciar
-    const bootstrapAsync = async () => {
-      let token: string | null = null;
-      try {
-        token = await SecureStore.getItemAsync('userToken');
-        if (token) {
-          // Si el token es la marca especial que devuelve el backend en primer inicio,
-          // no hacemos la llamada a /auth/me porque no es un JWT válido y provocaría 401.
-          if (token === 'primer_inicio') {
-            console.warn('Token de primer inicio detectado en SecureStore, eliminando token temporal');
+  useEffect(() => {
+    const bootstrapAsync = async () => {
+      let token: string | null = null;
+      try {
+        await initDatabase();
+        token = await SecureStore.getItemAsync('userToken');
+        
+        if (token) {
+          if (token === 'primer_inicio') {
+            // ... (tu lógica está bien)
+            await SecureStore.deleteItemAsync('userToken');
+            token = null;
+          } else {
+            // --- 2. DECODIFICA EL TOKEN GUARDADO ---
+            try {
+              const decodedToken = jwtDecode<JwtPayload>(token);
+              setUserCargo(decodedToken.cargo);
+              setUserRUT(decodedToken.rut);
+              
+              // Sincroniza catálogos (esto SÍ necesita la API)
+              await sincronizarCatalogos(); 
+              console.log("✅ Catálogos sincronizados al iniciar app.");
+
+            } catch (err) {
+            // Esto pasaría si el token es inválido o expiró
+              console.warn('Token inválido/expirado, deslogueando:', err);
             await SecureStore.deleteItemAsync('userToken');
             token = null;
-          } else {
-            // Obtener información del usuario desde la API
-            try {
-              const api = (await import('../services/api')).default;
-              const headers = { Authorization: `Bearer ${token}` };
-              const resp = await api.get('/auth/me', { headers });
-              setUserCargo(resp.data?.ID_Cargo ?? null);
-            } catch (err) {
-              console.warn('No se pudo obtener info del usuario:', err);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error restaurando token', e);
-      }
-      setUserToken(token);
-      setIsLoading(false);
-    };
-    bootstrapAsync();
-  }, []);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error restaurando token', e);
+      }
+      setUserToken(token);
+      setIsLoading(false);
+    };
+    bootstrapAsync();
+  }, []);
 
-  const authContextValue = React.useMemo(
-    () => ({
-      userToken,
-      isLoading,
-      userCargo,
-      signIn: async (token: string) => {
-        try {
-          console.log('🔐 Guardando token en SecureStore:', token);
-          await SecureStore.setItemAsync('userToken', token);
-          console.log('✅ Token guardado correctamente');
-          setUserToken(token);
-          // Obtener cargo del usuario
-          try {
-            // Evitar llamar a /auth/me si recibimos el marcador especial "primer_inicio"
-            if (token === 'primer_inicio') {
-              console.warn('Inicio con token de primer inicio: no se solicitará /auth/me');
-              // eliminamos el token temporal para evitar loops futuros
-              await SecureStore.deleteItemAsync('userToken');
-              setUserToken(null);
-              setUserCargo(null);
-              return;
-            }
+  const authContextValue = React.useMemo(
+    () => ({
+      userToken,
+      isLoading,
+      userCargo,
+      userRUT, // <-- Lo pasas al contexto
+      signIn: async (token: string) => {
+        try {
+          await SecureStore.setItemAsync('userToken', token);
+          setUserToken(token);
+          
+          try {
+            if (token === 'primer_inicio') {
+              // ... (tu lógica está bien)
+              await SecureStore.deleteItemAsync('userToken');
+              setUserToken(null);
+              setUserCargo(null);
+              setUserRUT(null);
+              return;
+            }
 
-            const api = (await import('../services/api')).default;
-            const headers = { Authorization: `Bearer ${token}` };
-            const resp = await api.get('/auth/me', { headers });
-            setUserCargo(resp.data?.ID_Cargo ?? null);
-          } catch (err) {
-            console.warn('No se pudo obtener cargo del usuario:', err);
-          }
-        } catch (e) {
-          console.error('❌ Error guardando token:', e);
-        }
-      },
-      signOut: async () => {
-        try {
-          await SecureStore.deleteItemAsync('userToken');
-          setUserToken(null);
-          setUserCargo(null);
-        } catch (e) {
-          console.error('Error borrando token', e);
-        }
-      },
-    }),
-    [userToken, isLoading, userCargo]
-  );
+            // --- 3. DECODIFICA EL NUEVO TOKEN ---
+            const decodedToken = jwtDecode<JwtPayload>(token);
+            setUserCargo(decodedToken.cargo);
+            setUserRUT(decodedToken.rut);
+            
+            // Sincroniza catálogos
+            await sincronizarCatalogos();
+            console.log("✅ Catálogos sincronizados post-login.");
 
-  // Muestra Loading mientras se verifica el token inicial
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+          } catch (err) {
+            console.warn('No se pudo decodificar token o sincronizar:', err);
+          }
+        } catch (e) {
+          console.error('❌ Error guardando token:', e);
+        }
+      },
+      signOut: async () => {
+        try {
+          await SecureStore.deleteItemAsync('userToken');
+          setUserToken(null);
+          setUserCargo(null);
+          setUserRUT(null); // <-- Limpia el RUT
+        } catch (e) {
+          console.error('Error borrando token', e);
+        }
+      },
+    }),
+    [userToken, isLoading, userCargo, userRUT] // <-- Añade userRUT
+  );
 
-  return (
-    <AuthContext.Provider value={authContextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+// ... (tu hook useAuth se mantiene igual)
 
 // Hook personalizado para usar el contexto fácilmente
 export const useAuth = (): AuthContextType => {

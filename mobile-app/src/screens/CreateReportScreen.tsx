@@ -4,36 +4,46 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { reportService } from '../services/api';
 import { Area, Severidad } from '../types/reportes';
+import {getDB} from '../db/database';
+import { useAuth } from '../context/AuthContext';
 
 type CreateReportNavProp = NativeStackNavigationProp<RootStackParamList, 'CreateReport'>;
 
 const CreateReportScreen: React.FC = () => {
   const navigation = useNavigation<CreateReportNavProp>();
+  const auth = useAuth();
 
   // Estados del formulario
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [idArea, setIdArea] = useState<string>('1');
-  const [idSeveridad, setIdSeveridad] = useState<string>('1');
+  const [idArea, setIdArea] = useState<string>();
+  const [idSeveridad, setIdSeveridad] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCatalogos, setIsLoadingCatalogos] = useState(true);
   const [areas, setAreas] = useState<Area[]>([]);
   const [severidades, setSeveridades] = useState<Severidad[]>([]);
 
   // Cargar catálogos al montar el componente
   useEffect(() => {
     const loadCatalogos = async () => {
+      setIsLoadingCatalogos(true);
       try {
-        const [areasData, severidadesData] = await Promise.all([
-          reportService.getAreas(),
-          reportService.getSeveridades()
-        ]);
-        setAreas(areasData);
-        setSeveridades(severidadesData);
+        const db = getDB();
+        const areasRes: Area[] = await db.getAllAsync('SELECT * FROM Areas;');
+        const severidadesRes: Severidad[] = await db.getAllAsync('SELECT * FROM Severidad;');
+        console.log('Catálogo de áreas cargado:', areasRes);
+        console.log('Catálogo de severidades cargado:', severidadesRes);
+
+        setAreas(areasRes);
+        setSeveridades(severidadesRes);
+        if (areasRes.length > 0) setIdArea(areasRes[0].ID_Area.toString());
+        if (severidadesRes.length > 0) setIdSeveridad(severidadesRes[0].ID_Severidad.toString());
       } catch (err) {
         console.error('Error al cargar catálogos:', err);
-        Alert.alert('Error', 'No se pudieron cargar los catálogos. Intenta más tarde.');
+        Alert.alert('Error', `No se pudieron cargar los catálogos. Intenta más tarde.`);
+      } finally {
+        setIsLoadingCatalogos(false);
       }
     };
     loadCatalogos();
@@ -45,27 +55,51 @@ const CreateReportScreen: React.FC = () => {
       return;
     }
 
+    if(!idArea || !idSeveridad) {
+      Alert.alert('Validación', 'Debes seleccionar un área y una severidad');
+      return;
+    }
+
+    const rutUsuario = auth?.userRUT;
+    if (!rutUsuario) {
+      Alert.alert('Error', 'No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const reportData = {
+      const db = getDB();
+
+      const uuid = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+      const fecha = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
+      const sql= `
+        INSERT INTO Reportes 
+        (Titulo, Descripcion, Fecha_Reporte, UUID_Cliente, RUT, ID_Area, ID_Severidad, ID_Estado_Actual)
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, 1);
+      `;
+      await db.runAsync(sql,[
         titulo,
         descripcion,
-        fecha_reporte: new Date().toISOString().split('T')[0],
-        uuid_cliente: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-        peticion_idempotencia: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-        id_severidad: parseInt(idSeveridad, 10),
-        id_area: parseInt(idArea, 10),
-      };
-      const res = await reportService.createReport(reportData);
-      Alert.alert('Reporte enviado', `ID: ${res.id_reporte}`);
+        fecha,
+        uuid,
+        rutUsuario,
+        parseInt(idArea,10),
+        parseInt(idSeveridad,10)
+
+      ]);
+
+      Alert.alert('Reporte Guardado', 'El reporte se guardó localmente. Sincroniza cuando tengas conexión.');
+
       // Limpiar formulario
       setTitulo('');
       setDescripcion('');
-      setIdArea(areas[0]?.ID_Area.toString() || '1');
-      setIdSeveridad(severidades[0]?.ID_Severidad.toString() || '1');
+
+
     } catch (err: any) {
       console.error(err);
-      const mensaje = err.response?.data?.detail || err.message || 'No se pudo crear el reporte. Por favor intenta nuevamente.';
+      const mensaje = err.response?.data?.detail || err.message || 'No se pudo crear el reporte en el telefono. Por favor intenta nuevamente.';
       Alert.alert('Error', mensaje);
     } finally {
       setIsLoading(false);
@@ -74,11 +108,11 @@ const CreateReportScreen: React.FC = () => {
 
 
 
-  if (isLoading) {
+  if (isLoadingCatalogos) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Creando reporte...</Text>
+        <Text>Cargando catálogos...</Text>
       </View>
     );
   }
@@ -139,7 +173,7 @@ const CreateReportScreen: React.FC = () => {
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button title="Crear reporte" onPress={handleCreate} />
+          <Button title="Crear reporte" onPress={handleCreate} disabled={isLoading } />
         </View>
       </View>
     </ScrollView>
