@@ -6,16 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "workingDirectory": "mobile-app"
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "workingDirectory": "mobile-app"
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "workingDirectory": "mobile-app"
+      "autoIncrement": true
     }
   },
   "submit": {
