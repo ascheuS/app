@@ -7,15 +7,15 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "projectDir": "mobile-app"
+      "workingDirectory": "mobile-app"
     },
     "preview": {
       "distribution": "internal",
-      "projectDir": "mobile-app"
+      "workingDirectory": "mobile-app"
     },
     "production": {
       "autoIncrement": true,
-      "projectDir": "mobile-app"
+      "workingDirectory": "mobile-app"
     }
   },
   "submit": {
