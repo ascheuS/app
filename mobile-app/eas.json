@@ -4,16 +4,18 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "rootDir": "mobile-app",
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "rootDir": "mobile-app"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "rootDir": "mobile-app"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "rootDir": "mobile-app"
     }
   },
   "submit": {
