@@ -2,6 +2,7 @@ import { getDB } from '../db/database'; // Tu archivo de initDatabase
 import api  from './api'; // Tu servicio de API (Axios)
 
 // Esta función hará todo el trabajo
+
 export const sincronizarCatalogos = async () => {
   const db = getDB();
   console.log("Iniciando sincronización de catálogos...");
@@ -13,6 +14,7 @@ export const sincronizarCatalogos = async () => {
       api.get('/reportes/catalogos/estados'),
     ]);
 
+    // Si llegamos aquí, la descarga fue exitosa, entonces borramos y insertamos
     await db.withTransactionAsync(async () => {
       await db.runAsync('DELETE FROM Areas;');
       await db.runAsync('DELETE FROM Severidad;');
@@ -39,7 +41,8 @@ export const sincronizarCatalogos = async () => {
 
     console.log("✅ Sincronización completada");
   } catch (e) {
+    // Si falla, no borramos los catálogos y dejamos los que había
     console.error("❌ Error en sincronización:", e);
-    throw e;
+    console.log("Se mantienen los catálogos locales existentes.");
   }
 };

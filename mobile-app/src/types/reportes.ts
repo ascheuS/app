@@ -40,10 +40,10 @@ export interface SyncStatus {
 // Interfaces para catálogos
 export interface Area {
     ID_Area: number;
-    Nombre_area: string;
+    Nombre_Area: string;
 }
 
 export interface Severidad {
     ID_Severidad: number;
-    Nombre_severidad: string;
+    Nombre_Severidad: string;
 }

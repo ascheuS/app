@@ -12,13 +12,6 @@ export const initDatabase = async () => {
   // 1. Habilitar llaves foráneas (¡OBLIGATORIO!)
   await db.execAsync('PRAGMA foreign_keys = ON;');
 
-  // --- BORRADO DE TABLAS (En orden inverso de dependencia) ---
-  await db.execAsync('DROP TABLE IF EXISTS Multimedia_reportes;');
-  await db.execAsync('DROP TABLE IF EXISTS Reportes;');
-  await db.execAsync('DROP TABLE IF EXISTS Areas;');
-  await db.execAsync('DROP TABLE IF EXISTS Severidad;');
-  await db.execAsync('DROP TABLE IF EXISTS Estado_reportes;');
-
   // --- CREACIÓN DE TABLAS DE CATÁLOGOS ---
   // Estas tablas se "sincronizan" (se descargan) desde la API
   // para llenar los menús desplegables (Pickers) offline.

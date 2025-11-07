@@ -75,9 +75,9 @@ const CreateReportScreen: React.FC = () => {
 
       const sql= `
         INSERT INTO Reportes 
-        (Titulo, Descripcion, Fecha_Reporte, UUID_Cliente, RUT, ID_Area, ID_Severidad, ID_Estado_Actual)
+        (Titulo, Descripcion, Fecha_Reporte, UUID_Cliente, RUT, ID_Area, ID_Severidad, ID_Estado_Actual, sincronizado)
         VALUES
-        (?, ?, ?, ?, ?, ?, ?, 1);
+        (?, ?, ?, ?, ?, ?, ?, 1, 0);
       `;
       await db.runAsync(sql,[
         titulo,
@@ -95,7 +95,9 @@ const CreateReportScreen: React.FC = () => {
       // Limpiar formulario
       setTitulo('');
       setDescripcion('');
-
+      //Resetear pickers a la primera opción
+      if (areas.length > 0) setIdArea(areas[0].ID_Area.toString());
+      if (severidades.length > 0) setIdSeveridad(severidades[0].ID_Severidad.toString());
 
     } catch (err: any) {
       console.error(err);
@@ -148,7 +150,7 @@ const CreateReportScreen: React.FC = () => {
             {areas.map(area => (
               <Picker.Item 
                 key={area.ID_Area} 
-                label={area.Nombre_area} 
+                label={area.Nombre_Area} 
                 value={area.ID_Area.toString()} 
               />
             ))}
@@ -165,7 +167,7 @@ const CreateReportScreen: React.FC = () => {
             {severidades.map(sev => (
               <Picker.Item 
                 key={sev.ID_Severidad} 
-                label={sev.Nombre_severidad} 
+                label={sev.Nombre_Severidad} 
                 value={sev.ID_Severidad.toString()} 
               />
             ))}

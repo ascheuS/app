@@ -33,40 +33,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userCargo, setUserCargo] = useState<number | null>(null);
   const [userRUT, setUserRUT] = useState<number | null>(null); // <-- Lo mantenemos
 
-  useEffect(() => {
+useEffect(() => {
     const bootstrapAsync = async () => {
       let token: string | null = null;
-      try {
+      
+      // --- INICIA EL TRY EXTERNO ---
+      // (Para 'initDatabase' y 'SecureStore.getItemAsync')
+      try { 
         await initDatabase();
         token = await SecureStore.getItemAsync('userToken');
         
         if (token) {
           if (token === 'primer_inicio') {
-            // ... (tu lógica está bien)
+            // Lógica de primer inicio (está bien)
             await SecureStore.deleteItemAsync('userToken');
             token = null;
           } else {
-            // --- 2. DECODIFICA EL TOKEN GUARDADO ---
-            try {
-              const decodedToken = jwtDecode<JwtPayload>(token);
+            // --- INICIA EL TRY INTERNO ---
+            // (Para 'jwtDecode' y 'sincronizarCatalogos')
+            try { 
+              const decodedToken = jwtDecode<JwtPayload>(token);
               setUserCargo(decodedToken.cargo);
-              setUserRUT(decodedToken.rut);
-              
-              // Sincroniza catálogos (esto SÍ necesita la API)
-              await sincronizarCatalogos(); 
-              console.log("✅ Catálogos sincronizados al iniciar app.");
+              setUserRUT(decodedToken.rut);
+              
+              // Sincroniza catálogos (esto puede fallar offline)
+              await sincronizarCatalogos(); 
+              console.log("✅ Catálogos sincronizados al iniciar app.");
 
-            } catch (err) {
-            // Esto pasaría si el token es inválido o expiró
-              console.warn('Token inválido/expirado, deslogueando:', err);
-            await SecureStore.deleteItemAsync('userToken');
-            token = null;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error restaurando token', e);
+            } catch (err:any) { // --- CATCH INTERNO ---
+              // Esta es la lógica que te di. ¡Está correcta!
+              // Solo desloguea si el error es 401
+              if (err.response && err.response.status === 401) { 
+                console.warn('Token inválido/expirado (401), deslogueando:', err);
+                await SecureStore.deleteItemAsync('userToken');
+                token = null;
+              } else {
+                // Si es un 404 o error de red, solo avisa pero NO desloguea
+                console.error('Error en bootstrapAsync (pero no es 401):', err.message);
+              }
+            } // <-- CIERRA EL CATCH INTERNO
+          } // <-- CIERRA EL 'else'
+        } // <-- CIERRA EL 'if (token)'
+
+      } catch (e) { // <-- CATCH EXTERNO
+        console.error('Error restaurando token o iniciando DB:', e);
       }
+      // --- FIN DEL TRY/CATCH EXTERNO ---
+
       setUserToken(token);
       setIsLoading(false);
     };
