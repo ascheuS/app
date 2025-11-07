@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
-from modulos.modelosORM import Areas, Severidad
+from modulos.modelosORM import Areas, Severidad, Estado_reportes
 from esquemas.reportes import ReporteCreate
 from routes.auth import get_current_user
 
@@ -22,6 +22,10 @@ async def get_severidad(db: Session = Depends(get_db)) -> List[Severidad]:
     severidades = db.query(Severidad).all()
     return severidades
 
+@router.get('/catalogos/estados')
+async def get_severidad(db: Session = Depends(get_db)) -> List[Estado_reportes]:
+    estado = db.query(Estado_reportes).all()
+    return estado
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def crear_reporte(reporte: ReporteCreate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -8,9 +8,9 @@ export const sincronizarCatalogos = async () => {
 
   try {
     const [areasRes, severidadRes, estadosRes] = await Promise.all([
-      api.get('/catalogos/areas'),
-      api.get('/catalogos/severidad'),
-      api.get('/catalogos/estados'),
+      api.get('/reportes/catalogos/areas'),
+      api.get('/reportes/catalogos/severidad'),
+      api.get('/reportes/catalogos/estados'),
     ]);
 
     await db.withTransactionAsync(async () => {

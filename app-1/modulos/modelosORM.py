@@ -40,7 +40,7 @@ class Severidad(Base):
     # Relación inversa
     reportes = relationship("Reportes", back_populates="severidad_rel")
 
-class Estados_reportes(Base):
+class Estado_reportes(Base):
     __tablename__ = "Estados_reportes"
     ID_Estado_Actual = Column(Integer, primary_key=True, index=True)
     Nombre_estado = Column(String(100), nullable=False)
@@ -89,13 +89,13 @@ class Reportes(Base):
     RUT = Column(BIGINT, ForeignKey("Usuarios.RUT"))
     ID_Severidad = Column(Integer, ForeignKey("Severidad.ID_Severidad"))
     ID_Area = Column(Integer, ForeignKey("Areas.ID_Area"))
-    ID_Estado_Actual = Column(Integer, ForeignKey("Estados_reportes.ID_Estado_Actual"))
+    ID_Estado_Actual = Column(Integer, ForeignKey("Estado_reportes.ID_Estado_Actual"))
 
     # --- Relaciones ---
     usuario_rel = relationship("Usuarios", back_populates="reportes")
     severidad_rel = relationship("Severidad", back_populates="reportes")
     area_rel = relationship("Areas", back_populates="reportes")
-    estado_actual_rel = relationship("Estados_reportes", back_populates="reportes")
+    estado_actual_rel = relationship("Estado_reportes", back_populates="reportes")
     
     # Relaciones inversas
     multimedia = relationship("Multimedia_reportes", back_populates="reporte_rel")
@@ -119,20 +119,20 @@ class Bitacora_reportes(Base):
     Actualizacion_fecha = Column(DateTime, nullable=False, server_default=func.now())
     
     # --- Llaves Foráneas ---
-    ID_Estado_Actual = Column(Integer, ForeignKey("Estados_reportes.ID_Estado_Actual"))
+    ID_Estado_Actual = Column(Integer, ForeignKey("Estado_reportes.ID_Estado_Actual"))
     ID_Reporte = Column(Integer, ForeignKey("Reportes.ID_Reporte"))
     RUT = Column(BIGINT, ForeignKey("Usuarios.RUT"))
 
     # --- Relaciones ---
-    estado_actual_rel = relationship("Estados_reportes", back_populates="bitacoras")
+    estado_actual_rel = relationship("Estado_reportes", back_populates="bitacoras")
     reporte_rel = relationship("Reportes", back_populates="bitacoras")
     usuario_rel = relationship("Usuarios", back_populates="bitacoras")
 
 class Estado_transicion(Base):
     __tablename__ = "Estado_transicion"
     ID_Transicion = Column(Integer, primary_key=True, autoincrement=True)
-    Estado_Desde = Column(Integer, ForeignKey("Estados_reportes.ID_Estado_Actual"))
-    Estado_Hacia = Column(Integer, ForeignKey("Estados_reportes.ID_Estado_Actual"))
+    Estado_Desde = Column(Integer, ForeignKey("Estado_reportes.ID_Estado_Actual"))
+    Estado_Hacia = Column(Integer, ForeignKey("Estado_reportes.ID_Estado_Actual"))
     
     # (Estas relaciones son más avanzadas, pero útiles si las necesitas)
     # estado_desde_rel = relationship("Estados_reportes", foreign_keys=[Estado_Desde])
