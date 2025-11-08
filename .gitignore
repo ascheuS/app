@@ -44,6 +44,7 @@ mobile-app/android/ # Carpeta nativa generada
 # Ignorar archivo de configuración específico del frontend
 mobile-app/src/constants/config.ts
 
+android/
 # ========================
 # Docker
 # ========================

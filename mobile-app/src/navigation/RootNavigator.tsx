@@ -9,6 +9,7 @@ import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import AddUserScreen from '../screens/AddUserScreen';
 import DebugScreen from '../screens/DebugScreen';
+import OfflineTestScreen from '../screens/OfflineTestScreen';
 import CreateReportScreen from '../screens/CreateReportScreen';
 import AdminHome from '../screens/AdminHome';
 import { RootStackParamList } from './types';
@@ -60,6 +61,7 @@ const RootNavigator = () => {
               <Stack.Screen name="CreateReport" component={CreateReportScreen} options={{ title: 'Crear Reporte' }} />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Debug" component={DebugScreen} options={{ title: 'Debug' }} />
+              <Stack.Screen name="OfflineTest" component={OfflineTestScreen} options={{ title: 'Prueba Offline' }} />
             </>
           )
         )}

@@ -13,6 +13,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@nozbe/watermelondb": "^0.28.0",
+    "@react-native-community/netinfo": "^11.4.1",
     "@react-native-picker/picker": "^2.11.4",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.28.0",
+    "@react-native-community/cli": "latest",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",

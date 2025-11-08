@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { getDB } from '../db/database';
+import { getDB, resetDatabase } from '../db/database';
 
 interface ReporteLocal {
   id_local: number;

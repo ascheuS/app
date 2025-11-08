@@ -7,4 +7,5 @@ export type RootStackParamList = {
   CreateReport: undefined;
   AdminHome: undefined;
   Debug: undefined;
+  OfflineTest: undefined;
 };
