@@ -212,8 +212,8 @@ const HomeScreen: React.FC = () => {
         
         <View style={styles.buttonWrapper}>
           <Button
-            title="Sincronizar"
-            onPress={() => navigation.navigate('Sync' as any)}
+            title="Testing Offline/Sync"
+            onPress={() => navigation.navigate('OfflineTest')}
             color="#4CAF50"
           />
         </View>

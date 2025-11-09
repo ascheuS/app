@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { Area, Severidad } from '../types/reportes';
+import { generateUUIDv4 } from '../utils/uuidGenerator';
 import {getDB} from '../db/database';
 import { useAuth } from '../context/AuthContext';
 
@@ -70,7 +71,7 @@ const CreateReportScreen: React.FC = () => {
     try {
       const db = getDB();
 
-      const uuid = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+      const uuid = generateUUIDv4();
       const fecha = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
 
       const sql= `

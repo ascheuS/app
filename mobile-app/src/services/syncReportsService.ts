@@ -14,6 +14,7 @@ interface ReporteLocal {
   ID_Severidad: number;
   ID_Estado_Actual: number;
   sincronizado: number;
+  id_servidor?: number;
 }
 
 /**
@@ -53,12 +54,15 @@ export const sincronizarReportesPendientes = async (): Promise<number> => {
         // Preparar datos para el servidor
         const reporteData = {
           titulo: reporte.Titulo,
-          descripcion: reporte.Descripcion,
+          descripcion: reporte.Descripcion || '',
           fecha_reporte: reporte.Fecha_Reporte,
           uuid_cliente: reporte.UUID_Cliente,
-          peticion_idempotencia: `mobile-${reporte.UUID_Cliente}`,
-          id_severidad: reporte.ID_Severidad,
-          id_area: reporte.ID_Area,
+          peticion_idempotencia: `mobile-${reporte.UUID_Cliente}-${Date.now()}`, // Nota: singular
+          id_severidad: Number(reporte.ID_Severidad),
+          id_area: Number(reporte.ID_Area),
+          id_estado_actual: Number(reporte.ID_Estado_Actual),
+          rut: Number(reporte.RUT),
+          // No incluimos RUT ni ID_Estado_Actual porque el endpoint no los menciona.
         };
 
         // Enviar al servidor

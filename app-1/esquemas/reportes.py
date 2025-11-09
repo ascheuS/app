@@ -12,6 +12,8 @@ class ReporteCreate(BaseModel):
     peticion_idempotencia: Optional[str] = None
     id_severidad: int
     id_area: int
+    id_estado_actual: Optional[int] = None
+    rut: Optional[int] = None
 
 
 # --- Schemas para Catálogos ---

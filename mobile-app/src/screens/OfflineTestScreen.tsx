@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { autoSyncService } from '../services/autoSyncService';
-import { obtenerReportesPendientes } from '../services/syncReportsService';
+import { obtenerReportesPendientes, sincronizarReportesPendientes } from '../services/syncReportsService';
 
 const OfflineTestScreen: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -18,11 +18,20 @@ const OfflineTestScreen: React.FC = () => {
   const [connectionType, setConnectionType] = useState<string>('unknown');
   const [reportesPendientes, setReportesPendientes] = useState<number>(0);
   const [autoSyncActive, setAutoSyncActive] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log('🔧 [DEBUG] OfflineTestScreen montado - configurando NetInfo');
+    
     // Suscribirse a cambios de red
     const unsubscribe = NetInfo.addEventListener(state => {
-      console.log('📡 Estado de red:', state);
+      console.log('📡 [DEBUG] Estado de red recibido:', {
+        isConnected: state.isConnected,
+        isInternetReachable: state.isInternetReachable,
+        type: state.type,
+        details: state.details
+      });
+      
       setIsConnected(state.isConnected);
       setIsInternetReachable(state.isInternetReachable);
       setConnectionType(state.type);
@@ -32,23 +41,55 @@ const OfflineTestScreen: React.FC = () => {
     cargarEstado();
 
     return () => {
+      console.log('🔧 [DEBUG] OfflineTestScreen desmontado - limpiando suscripción');
       unsubscribe();
     };
   }, []);
 
   const cargarEstado = async () => {
-    // Obtener estado actual de la red
-    const state = await NetInfo.fetch();
-    setIsConnected(state.isConnected);
-    setIsInternetReachable(state.isInternetReachable);
-    setConnectionType(state.type);
+    try {
+      console.log('🔍 [DEBUG] Cargando estado inicial...');
+      setIsLoading(true);
+      
+      // Obtener estado actual de la red
+      const state = await NetInfo.fetch();
+      console.log('📡 [DEBUG] Estado inicial de NetInfo:', state);
+      
+      setIsConnected(state.isConnected);
+      setIsInternetReachable(state.isInternetReachable);
+      setConnectionType(state.type);
 
-    // Obtener reportes pendientes
-    const pendientes = await obtenerReportesPendientes();
-    setReportesPendientes(pendientes);
+      // Obtener reportes pendientes
+      const pendientes = await obtenerReportesPendientes();
+      console.log(`📊 [DEBUG] Reportes pendientes: ${pendientes}`);
+      setReportesPendientes(pendientes);
 
-    // Verificar si auto-sync está activo
-    setAutoSyncActive(autoSyncService.isActive());
+      // Verificar si auto-sync está activo
+      const syncActivo = autoSyncService.isActive();
+      console.log(`🔄 [DEBUG] Auto-sync activo: ${syncActivo}`);
+      setAutoSyncActive(syncActivo);
+
+    } catch (error) {
+      console.error('❌ [DEBUG] Error cargando estado:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testNetInfoManual = async () => {
+    console.log('🧪 [DEBUG] Ejecutando test manual de NetInfo...');
+    try {
+      const state = await NetInfo.fetch();
+      console.log('📡 [DEBUG] Test NetInfo - Resultado:', state);
+      
+      Alert.alert(
+        '🧪 Test NetInfo', 
+        `Conectado: ${state.isConnected}\nInternet alcanzable: ${state.isInternetReachable}\nTipo: ${state.type}\nDetalles: ${JSON.stringify(state.details)}`
+      );
+    } catch (error) {
+      console.error('❌ [DEBUG] Error en test NetInfo:', error);
+      Alert.alert('❌ Error', 'No se pudo obtener información de red');
+    }
   };
 
   const simularOffline = () => {
@@ -66,8 +107,13 @@ const OfflineTestScreen: React.FC = () => {
 
   const forzarSincronizacion = async () => {
     try {
+      console.log('🔄 [DEBUG] Iniciando sincronización manual...');
+      setIsLoading(true);
+      
       Alert.alert('🔄 Sincronizando...', 'Espera un momento');
-      const sincronizados = await autoSyncService.syncNow();
+      const sincronizados = await sincronizarReportesPendientes();
+      
+      console.log(`✅ [DEBUG] Sincronización completada: ${sincronizados} reportes`);
       
       if (sincronizados > 0) {
         Alert.alert('✅ Éxito', `Se sincronizaron ${sincronizados} reporte(s)`);
@@ -75,13 +121,20 @@ const OfflineTestScreen: React.FC = () => {
         Alert.alert('ℹ️ Información', 'No hay reportes pendientes');
       }
       
-      cargarEstado();
+      // Recargar estado después de sincronizar
+      await cargarEstado();
+      
     } catch (error: any) {
+      console.error('❌ [DEBUG] Error en sincronización:', error);
       Alert.alert('❌ Error', error.message || 'No se pudo sincronizar');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const toggleAutoSync = () => {
+    console.log(`🔄 [DEBUG] Cambiando auto-sync de ${autoSyncActive} a ${!autoSyncActive}`);
+    
     if (autoSyncActive) {
       autoSyncService.stop();
       setAutoSyncActive(false);
@@ -91,6 +144,15 @@ const OfflineTestScreen: React.FC = () => {
       setAutoSyncActive(true);
       Alert.alert('✅ Activado', 'Sincronización automática activada');
     }
+  };
+
+  const crearReporteTest = async () => {
+    console.log('🧪 [DEBUG] Creando reporte de prueba...');
+    // Aquí podrías agregar lógica para crear un reporte de prueba automáticamente
+    Alert.alert(
+      '🧪 Crear Reporte Test',
+      'Para crear un reporte de prueba:\n\n1. Ve a "Crear Reporte"\n2. Llena los datos\n3. Guarda (funciona offline)\n4. Regresa aquí para ver el conteo'
+    );
   };
 
   const getConnectionStatusColor = () => {
@@ -103,6 +165,21 @@ const OfflineTestScreen: React.FC = () => {
     if (isConnected && isInternetReachable) return 'Conectado a Internet';
     if (isConnected && !isInternetReachable) return 'Conectado sin Internet';
     return 'Sin conexión';
+  };
+
+  const getConnectionTypeText = () => {
+    const types: { [key: string]: string } = {
+      'wifi': 'WiFi',
+      'cellular': 'Datos Móviles',
+      'ethernet': 'Ethernet',
+      'bluetooth': 'Bluetooth',
+      'vpn': 'VPN',
+      'wimax': 'WiMAX',
+      'none': 'Sin conexión',
+      'unknown': 'Desconocido',
+      'other': 'Otro'
+    };
+    return types[connectionType] || connectionType;
   };
 
   return (
@@ -123,12 +200,14 @@ const OfflineTestScreen: React.FC = () => {
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Tipo de conexión:</Text>
-          <Text style={styles.value}>{connectionType || 'Desconocido'}</Text>
+          <Text style={styles.value}>{getConnectionTypeText()}</Text>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Conectado:</Text>
-          <Text style={styles.value}>{isConnected ? 'Sí' : 'No'}</Text>
+          <Text style={styles.value}>
+            {isConnected === null ? 'Verificando...' : isConnected ? 'Sí' : 'No'}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
@@ -137,6 +216,23 @@ const OfflineTestScreen: React.FC = () => {
             {isInternetReachable === null ? 'Verificando...' : isInternetReachable ? 'Sí' : 'No'}
           </Text>
         </View>
+
+        <TouchableOpacity
+          style={[styles.button, styles.refreshButton]}
+          onPress={cargarEstado}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? '⏳ Cargando...' : '🔄 Actualizar Estado'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.testButton]}
+          onPress={testNetInfoManual}
+        >
+          <Text style={styles.buttonText}>🧪 Test NetInfo</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Sincronización */}
@@ -145,7 +241,10 @@ const OfflineTestScreen: React.FC = () => {
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Reportes pendientes:</Text>
-          <View style={styles.badge}>
+          <View style={[
+            styles.badge,
+            { backgroundColor: reportesPendientes > 0 ? '#FF9800' : '#4CAF50' }
+          ]}>
             <Text style={styles.badgeText}>{reportesPendientes}</Text>
           </View>
         </View>
@@ -153,13 +252,14 @@ const OfflineTestScreen: React.FC = () => {
         <View style={styles.infoRow}>
           <Text style={styles.label}>Auto-sincronización:</Text>
           <Text style={[styles.value, { color: autoSyncActive ? '#4CAF50' : '#999' }]}>
-            {autoSyncActive ? 'Activa' : 'Inactiva'}
+            {autoSyncActive ? '✅ Activa' : '❌ Inactiva'}
           </Text>
         </View>
 
         <TouchableOpacity
           style={[styles.button, styles.toggleButton]}
           onPress={toggleAutoSync}
+          disabled={isLoading}
         >
           <Text style={styles.buttonText}>
             {autoSyncActive ? '🛑 Desactivar Auto-Sync' : '▶️ Activar Auto-Sync'}
@@ -169,9 +269,33 @@ const OfflineTestScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.button, styles.syncButton]}
           onPress={forzarSincronizacion}
-          disabled={!isConnected || reportesPendientes === 0}
+          disabled={!isConnected || reportesPendientes === 0 || isLoading}
         >
-          <Text style={styles.buttonText}>🔄 Sincronizar Ahora</Text>
+          <Text style={styles.buttonText}>
+            {isLoading ? '⏳ Sincronizando...' : '🔄 Sincronizar Ahora'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.createButton]}
+          onPress={crearReporteTest}
+        >
+          <Text style={styles.buttonText}>📝 Crear Reporte Test</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Información de Debug */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>🐛 Información de Debug</Text>
+        <Text style={styles.debugText}>
+          {`Estado: ${isConnected}\nInternet: ${isInternetReachable}\nTipo: ${connectionType}\nPendientes: ${reportesPendientes}\nAutoSync: ${autoSyncActive}\nCargando: ${isLoading}`}
+        </Text>
+        
+        <TouchableOpacity
+          style={[styles.button, styles.debugButton]}
+          onPress={() => console.log('🧪 [DEBUG] Log manual desde botón')}
+        >
+          <Text style={styles.buttonText}>📝 Log Manual</Text>
         </TouchableOpacity>
       </View>
 
@@ -190,37 +314,16 @@ const OfflineTestScreen: React.FC = () => {
 
           <Text style={[styles.stepTitle, { marginTop: 16 }]}>Opción 2: Servidor Caído</Text>
           <Text style={styles.stepText}>
-            1. Detén el backend (docker-compose stop){'\n'}
+            1. Detén el backend{'\n'}
             2. Crea reportes (se guardan localmente){'\n'}
-            3. Reinicia el backend (docker-compose start){'\n'}
+            3. Reinicia el backend{'\n'}
             4. Los reportes se sincronizan automáticamente
-          </Text>
-
-          <Text style={[styles.stepTitle, { marginTop: 16 }]}>Opción 3: WiFi Desconectado</Text>
-          <Text style={styles.stepText}>
-            1. Desactiva WiFi y Datos móviles{'\n'}
-            2. Crea reportes{'\n'}
-            3. Reactiva la conexión{'\n'}
-            4. Verifica sincronización automática
           </Text>
         </View>
 
         <TouchableOpacity style={styles.helpButton} onPress={simularOffline}>
           <Text style={styles.helpButtonText}>ℹ️ Ver Instrucciones Detalladas</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Comportamiento Auto-Sync */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>⚙️ Comportamiento Auto-Sync</Text>
-        <Text style={styles.infoText}>
-          La sincronización automática se activa en:{'\n\n'}
-          • Al iniciar sesión{'\n'}
-          • Cada 5 minutos{'\n'}
-          • Al volver la app a primer plano{'\n'}
-          • Al recuperar la conexión{'\n\n'}
-          Se desactiva al cerrar sesión.
-        </Text>
       </View>
 
       <View style={{ height: 40 }} />
@@ -279,7 +382,6 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   badge: {
-    backgroundColor: '#007AFF',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
@@ -300,6 +402,18 @@ const styles = StyleSheet.create({
   },
   syncButton: {
     backgroundColor: '#4CAF50',
+  },
+  refreshButton: {
+    backgroundColor: '#007AFF',
+  },
+  testButton: {
+    backgroundColor: '#FF9800',
+  },
+  createButton: {
+    backgroundColor: '#2196F3',
+  },
+  debugButton: {
+    backgroundColor: '#607D8B',
   },
   buttonText: {
     color: '#fff',
@@ -333,10 +447,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  infoText: {
-    fontSize: 14,
+  debugText: {
+    fontSize: 12,
     color: '#666',
-    lineHeight: 22,
+    fontFamily: 'monospace',
+    lineHeight: 18,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 6,
   },
 });
 

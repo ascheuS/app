@@ -48,37 +48,37 @@ async def crear_reporte(
     current_user = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """
-    Crea un reporte usando el procedimiento almacenado `sp_insertar_reporte`.
-    Devuelve el ID del reporte creado.
-    
-    **Requiere autenticación**: El usuario debe estar logueado.
-    """
     try:
-        # Llamamos al procedimiento y pedimos que nos devuelva el id via variable de salida
+        print("Datos recibidos para crear reporte:", reporte.dict())    
+        rut_a_usar= reporte.rut or current_user.RUT
+        id_estado_actual= reporte.id_estado_actual or 1  # Asignar un estado por defecto si no se proporciona
         params = {
             'p_titulo': reporte.titulo,
             'p_descripcion': reporte.descripcion,
             'p_fecha_reporte': reporte.fecha_reporte,
             'p_uuid_cliente': reporte.uuid_cliente,
-            'p_rut': current_user.RUT,
+            'p_rut': rut_a_usar,
             'p_id_severidad': reporte.id_severidad,
             'p_id_area': reporte.id_area,
-            'p_id_estado_actual': None,
+            'p_id_estado_actual': id_estado_actual,
             'p_peticiones_idempotencia': reporte.peticion_idempotencia,
         }
 
-        # Ejecutar CALL con variable de salida @out_id
+        print("Parámetros para el procedimiento almacenado:", params)
+
         sql_call = text("CALL sp_insertar_reporte(:p_titulo, :p_descripcion, :p_fecha_reporte, :p_uuid_cliente, :p_rut, :p_id_severidad, :p_id_area, :p_id_estado_actual, :p_peticiones_idempotencia, @out_id)")
         db.execute(sql_call, params)
-        row = db.execute(text('SELECT @out_id as id')).fetchone()
-        id_reporte = row['id'] if row is not None else None
         
-        if id_reporte is None:
+        # Cambio aquí: usar .mappings() para obtener un diccionario
+        row = db.execute(text('SELECT @out_id as id')).mappings().fetchone()
+        
+        if row is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail='No se pudo obtener el id del reporte'
             )
+        
+        id_reporte = row['id']
         
         db.commit()
         
@@ -88,10 +88,8 @@ async def crear_reporte(
         }
     except Exception as e:
         db.rollback()
-        # Si el procedimiento lanzó SIGNAL, el driver puede propagar el mensaje
         msg = str(e)
         
-        # Mejorar mensajes de error
         if 'UUID_Cliente ya existe' in msg:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,4 +99,4 @@ async def crear_reporte(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail=msg
-        )   
+        )
