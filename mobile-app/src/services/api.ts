@@ -179,5 +179,43 @@ export const reportService = {
             console.error('❌ Error al obtener severidades:', error.response?.data || error.message);
             throw error;
         }
+    },
+
+    updateReportStatus: async (reporte_id: number, nuevo_estado_id: number, detalle: string, token:string) => {
+        try {
+            // El token se agrega automáticamente por el interceptor
+            const response = await api.put(`/reportes/${reporte_id}/estado`, { nuevo_estado_id:nuevo_estado_id, detalle },{headers: { Authorization: `Bearer ${token}` }});
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Error al actualizar estado del reporte:', error.response?.data || error.message);
+            throw error;
+        }
+    },
+    getReportById: async (reportId: number, token: string) => {
+    try {
+        console.log(`📡 Solicitando reporte con ID: ${reportId}`);
+        console.log('🔑 Usando token:', token);
+        const response = await api.get(`/reportes/${reportId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching report:', error);
+      throw error;
+    }
+  },
+    getAllReports: async (token: string) => {
+        try {
+            // El token se agrega automáticamente por el interceptor
+            const response = await api.get('/reportes/',{
+               headers: { Authorization: `Bearer ${token}` 
+            }});
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Error al obtener todos los reportes:', error.response?.data || error.message);
+            throw error;
+        }
     }
 };

@@ -8,4 +8,6 @@ export type RootStackParamList = {
   AdminHome: undefined;
   Debug: undefined;
   OfflineTest: undefined;
+  AdminPanel: undefined;
+  AdminReportDetails: { reportId: number};
 };

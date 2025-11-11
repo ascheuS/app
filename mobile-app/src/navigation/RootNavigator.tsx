@@ -13,6 +13,8 @@ import OfflineTestScreen from '../screens/OfflineTestScreen';
 import CreateReportScreen from '../screens/CreateReportScreen';
 import AdminHome from '../screens/AdminHome';
 import { RootStackParamList } from './types';
+import AdminPanelScreen from '../screens/AdminPanelScreen';
+import AdminReportDetailsScreen from '../screens/AdminReportDetailsScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -54,6 +56,8 @@ const RootNavigator = () => {
               <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Gestión de Usuarios' }} />
               <Stack.Screen name="AddUser" component={AddUserScreen} options={{ title: 'Agregar Usuario' }} />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="AdminPanel" component={AdminPanelScreen} options={{title: 'Panel de Reportes'}}/>
+              <Stack.Screen name="AdminReportDetails" component={AdminReportDetailsScreen} options={{ title: 'Detalles de Reportes' }} />
             </>
           ) : (
             <>

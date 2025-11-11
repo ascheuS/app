@@ -15,9 +15,24 @@ const AdminHome: React.FC = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Panel Administrador</Text>
       <Text style={styles.subtitle}>Accesos rápidos para tareas de administración</Text>
-      <Button title="Gestión de Usuarios" onPress={() => navigation.navigate('AdminUsers')} />
+      
+      <Button 
+        title="📊 Ver Reportes" 
+        onPress={() => navigation.navigate('AdminPanel')} 
+      />
       <View style={{height:12}} />
-      <Button title="Cerrar sesión" color="#FF3B30" onPress={async () => { await signOut(); }} />
+      
+      <Button 
+        title="👥 Gestión de Usuarios" 
+        onPress={() => navigation.navigate('AdminUsers')} 
+      />
+      <View style={{height:12}} />
+      
+      <Button 
+        title="🚪 Cerrar sesión" 
+        color="#FF3B30" 
+        onPress={async () => { await signOut(); }} 
+      />
     </View>
   );
 };
