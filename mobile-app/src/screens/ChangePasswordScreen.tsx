@@ -1,3 +1,4 @@
+// mobile-app/src/screens/ChangePasswordScreen.tsx
 import React from 'react';
 import {
   View,
@@ -13,12 +14,20 @@ import { authService } from '../services/api';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { jwtDecode } from 'jwt-decode';
+
+interface JwtPayload {
+  rut: number;
+  cargo: number;
+  exp: number;
+}
 
 const ChangePasswordScreen: React.FC = () => {
-  const { signIn, userCargo } = useAuth() as any;
+  const { signIn } = useAuth() as any;
   const route = useRoute<RouteProp<RootStackParamList, 'ChangePassword'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const rutParam = route?.params?.rut;
+  
   const [currentPassword, setCurrentPassword] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
@@ -49,9 +58,12 @@ const ChangePasswordScreen: React.FC = () => {
     }
 
     try {
-  // Llamar al endpoint de cambio de contraseña
-  // Si vinimos desde login en primer inicio, enviamos el RUT como respaldo
-  const response = await authService.changePassword(currentPassword, newPassword, rutParam);
+      // Llamar al endpoint de cambio de contraseña
+      const response = await authService.changePassword(
+        currentPassword, 
+        newPassword, 
+        rutParam
+      );
       
       if (response && response.access_token) {
         Alert.alert(
@@ -59,16 +71,38 @@ const ChangePasswordScreen: React.FC = () => {
           'Contraseña cambiada correctamente',
           [
             {
-                  text: 'OK',
-                  onPress: async () => {
-                    // Iniciar sesión con el nuevo token
-                    await signIn(response.access_token);
-                    // Después de signIn, userCargo debería estar disponible en el contexto.
-                    // Navegar condicionalmente según cargo: admin -> AdminUsers, trabajador -> Home
-                    const destino = (userCargo === 1) ? 'AdminUsers' : 'Home';
-                    navigation.reset({ index: 0, routes: [{ name: destino as any }] });
-                  },
-                },
+              text: 'OK',
+              onPress: async () => {
+                // Iniciar sesión con el nuevo token
+                await signIn(response.access_token);
+                
+                // Decodificar el token para obtener el cargo
+                try {
+                  const decodedToken = jwtDecode<JwtPayload>(response.access_token);
+                  const userCargo = decodedToken.cargo;
+                  
+                  console.log('👤 Usuario cargo:', userCargo);
+                  
+                  // Navegar según el cargo del usuario
+                  const destino = userCargo === 1 ? 'AdminHome' : 'Home';
+                  
+                  console.log('🔀 Navegando a:', destino);
+                  
+                  // Reset navigation stack
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: destino as any }],
+                  });
+                } catch (decodeError) {
+                  console.error('Error decodificando token:', decodeError);
+                  // Fallback: ir a Home por defecto
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' as any }],
+                  });
+                }
+              },
+            },
           ]
         );
       }
@@ -96,6 +130,7 @@ const ChangePasswordScreen: React.FC = () => {
         value={currentPassword}
         onChangeText={setCurrentPassword}
         editable={!isLoading}
+        autoCapitalize="none"
       />
       
       <TextInput
@@ -105,6 +140,7 @@ const ChangePasswordScreen: React.FC = () => {
         value={newPassword}
         onChangeText={setNewPassword}
         editable={!isLoading}
+        autoCapitalize="none"
       />
       
       <TextInput
@@ -114,6 +150,7 @@ const ChangePasswordScreen: React.FC = () => {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         editable={!isLoading}
+        autoCapitalize="none"
       />
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
