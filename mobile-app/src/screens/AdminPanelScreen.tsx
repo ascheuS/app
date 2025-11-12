@@ -1,13 +1,13 @@
 // mobile-app/src/screens/AdminPanelScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +15,6 @@ import { reportService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { RootStackParamList } from '../navigation/types';
 
-// ✅ Interface que coincide con la estructura del backend
 interface Report {
   ID_Reporte: number;
   Titulo: string;
@@ -33,7 +32,10 @@ interface Report {
   Nombre_Usuario?: string;
 }
 
-type AdminPanelScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AdminPanel'>;
+type AdminPanelScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'AdminPanel'
+>;
 
 const AdminPanelScreen = () => {
   const navigation = useNavigation<AdminPanelScreenNavigationProp>();
@@ -54,12 +56,7 @@ const AdminPanelScreen = () => {
         setError('No hay token de autenticación');
         return;
       }
-
-      console.log('📡 Cargando reportes...');
       const reportsData = await reportService.getAllReports(userToken);
-      console.log('✅ Reportes recibidos:', reportsData.length);
-      console.log('📋 Primer reporte:', reportsData[0]);
-      
       setReports(reportsData);
     } catch (error: any) {
       console.error('❌ Error loading reports:', error);
@@ -75,93 +72,98 @@ const AdminPanelScreen = () => {
     loadReports();
   };
 
-  const renderReportItem = ({ item }: { item: Report }) => {
-    console.log('🔍 Renderizando reporte ID:', item.ID_Reporte);
-    
-    return (
-      <TouchableOpacity
-        style={styles.reportItem}
-        onPress={() => {
-          console.log('👆 Navegando a detalles del reporte:', item.ID_Reporte);
-          navigation.navigate('AdminReportDetails', {
-            reportId: item.ID_Reporte // ✅ Usar ID_Reporte con mayúsculas
-          });
-        }}
-      >
-        <View style={styles.reportHeader}>
-          <Text style={styles.reportTitle}>{item.Titulo}</Text>
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(item.Nombre_Estado || '') }
-          ]}>
-            <Text style={styles.statusBadgeText}>
-              {item.Nombre_Estado || 'Pendiente'}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.reportDescription} numberOfLines={2}>
-          {item.Descripcion || 'Sin descripción'}
-        </Text>
-
-        <View style={styles.reportDetails}>
-          {item.Nombre_Area && (
-            <View style={styles.detailChip}>
-              <Text style={styles.detailChipText}>📍 {item.Nombre_Area}</Text>
-            </View>
-          )}
-          {item.Nombre_Severidad && (
-            <View style={[
-              styles.detailChip,
-              { backgroundColor: getSeverityColor(item.ID_Severidad || 1) }
-            ]}>
-              <Text style={styles.detailChipText}>🚨 {item.Nombre_Severidad}</Text>
-            </View>
-          )}
-          {item.Nombre_Usuario && (
-            <View style={styles.detailChip}>
-              <Text style={styles.detailChipText}>👤 {item.Nombre_Usuario}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.reportFooter}>
-          <Text style={styles.reportId}>ID: {item.ID_Reporte}</Text>
-          <Text style={styles.reportDate}>
-            {new Date(item.Hora_Creado).toLocaleDateString('es-CL', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            })}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   const getStatusColor = (status: string) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
-      case 'pendiente': return '#FFA500';
-      case 'aprobado': return '#4CAF50';
-      case 'rechazado': return '#f44336';
-      default: return '#666';
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'pendiente':
+        return '#FFAA00';
+      case 'aprobado':
+        return '#4CAF50';
+      case 'rechazado':
+        return '#f44336';
+      default:
+        return '#666';
     }
   };
 
   const getSeverityColor = (severityId: number) => {
     switch (severityId) {
-      case 3: return '#f44336'; // Alta
-      case 2: return '#FFC107'; // Media
-      case 1: return '#4CAF50'; // Baja
-      default: return '#666';
+      case 3:
+        return '#f44336';
+      case 2:
+        return '#FFC107';
+      case 1:
+        return '#4CAF50';
+      default:
+        return '#666';
     }
   };
 
+  const renderReportItem = ({ item }: { item: Report }) => (
+    <TouchableOpacity
+      style={styles.reportCard}
+      onPress={() =>
+        navigation.navigate('AdminReportDetails', {
+          reportId: item.ID_Reporte,
+        })
+      }
+    >
+      <View style={styles.reportHeader}>
+        <Text style={styles.reportTitle}>{item.Titulo}</Text>
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusColor(item.Nombre_Estado || '') },
+          ]}
+        >
+          <Text style={styles.statusBadgeText}>
+            {item.Nombre_Estado || 'Pendiente'}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.reportDescription} numberOfLines={2}>
+        {item.Descripcion || 'Sin descripción'}
+      </Text>
+
+      <View style={styles.detailsRow}>
+        {item.Nombre_Area && (
+          <View style={styles.detailChip}>
+            <Text style={styles.detailChipText}>📍 {item.Nombre_Area}</Text>
+          </View>
+        )}
+        {item.Nombre_Severidad && (
+          <View
+            style={[
+              styles.detailChip,
+              { backgroundColor: getSeverityColor(item.ID_Severidad || 1) },
+            ]}
+          >
+            <Text style={styles.detailChipText}>
+              🚨 {item.Nombre_Severidad}
+            </Text>
+          </View>
+        )}
+        {item.Nombre_Usuario && (
+          <View style={styles.detailChip}>
+            <Text style={styles.detailChipText}>👤 {item.Nombre_Usuario}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.footerRow}>
+        <Text style={styles.reportId}>ID: {item.ID_Reporte}</Text>
+        <Text style={styles.reportDate}>
+          {new Date(item.Hora_Creado).toLocaleDateString('es-CL')}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#FFAA00" />
         <Text style={styles.loadingText}>Cargando reportes...</Text>
       </View>
     );
@@ -169,10 +171,10 @@ const AdminPanelScreen = () => {
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={styles.centered}>
         <Text style={styles.errorText}>❌ {error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadReports}>
-          <Text style={styles.retryButtonText}>🔄 Reintentar</Text>
+          <Text style={styles.retryButtonText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
     );
@@ -180,19 +182,22 @@ const AdminPanelScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>📊 Reportes Sincronizados</Text>
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{reports.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>
-              {reports.filter(r => r.Nombre_Estado?.toLowerCase() === 'pendiente').length}
-            </Text>
-            <Text style={styles.statLabel}>Pendientes</Text>
-          </View>
+      <Text style={styles.title}>📊 Reportes Sincronizados</Text>
+
+      <View style={styles.statsContainer}>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>{reports.length}</Text>
+          <Text style={styles.statLabel}>Total</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>
+            {
+              reports.filter(
+                (r) => r.Nombre_Estado?.toLowerCase() === 'pendiente'
+              ).length
+            }
+          </Text>
+          <Text style={styles.statLabel}>Pendientes</Text>
         </View>
       </View>
 
@@ -200,7 +205,9 @@ const AdminPanelScreen = () => {
         data={reports}
         renderItem={renderReportItem}
         keyExtractor={(item) => item.ID_Reporte.toString()}
-        contentContainerStyle={reports.length === 0 ? styles.emptyListContent : styles.listContent}
+        contentContainerStyle={
+          reports.length === 0 ? styles.emptyList : styles.listContent
+        }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -220,160 +227,150 @@ const AdminPanelScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#000',
+    paddingHorizontal: 20,
+    paddingTop: 40,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 16,
+    justifyContent: 'center',
+    gap: 40,
+    marginBottom: 25,
   },
   statBox: {
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#FFAA00',
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    fontSize: 14,
+    color: '#ccc',
   },
   listContent: {
-    padding: 16,
+    paddingBottom: 20,
   },
-  emptyListContent: {
-    flex: 1,
+  emptyList: {
+    flexGrow: 1,
     justifyContent: 'center',
   },
-  reportItem: {
-    backgroundColor: '#fff',
+  reportCard: {
+    backgroundColor: '#111',
     padding: 16,
     marginBottom: 12,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#FFAA00',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
   },
   reportHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 8,
   },
   reportTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
   },
   statusBadge: {
+    borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
   },
   statusBadgeText: {
-    color: '#fff',
+    color: '#000',
+    fontWeight: 'bold',
     fontSize: 12,
-    fontWeight: '600',
   },
   reportDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#ccc',
     marginBottom: 12,
-    lineHeight: 20,
   },
-  reportDetails: {
+  detailsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailChip: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#333',
+    borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
   },
   detailChipText: {
+    color: '#fff',
     fontSize: 12,
-    color: '#333',
   },
-  reportFooter: {
+  footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#222',
+    paddingTop: 10,
   },
   reportId: {
     fontSize: 12,
-    color: '#999',
-    fontFamily: 'monospace',
+    color: '#777',
   },
   reportDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#777',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
+  loadingText: {
+    color: '#ccc',
+    marginTop: 10,
   },
   errorText: {
-    fontSize: 16,
     color: '#f44336',
-    textAlign: 'center',
     marginBottom: 16,
+    fontSize: 16,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    backgroundColor: '#FFAA00',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: 'bold',
-    fontSize: 16,
   },
   emptyContainer: {
     alignItems: 'center',
     padding: 40,
   },
   emptyText: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
-    textAlign: 'center',
     marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#999',
+    color: '#aaa',
     textAlign: 'center',
   },
 });
+
 export default AdminPanelScreen;

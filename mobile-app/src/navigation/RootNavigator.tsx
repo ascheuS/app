@@ -52,17 +52,73 @@ const RootNavigator = () => {
           // Mostrar stacks separados según el cargo del usuario
           userCargo === 1 ? (
             <>
-              <Stack.Screen name="AdminHome" component={AdminHome} options={{ title: 'Admin' }} />
-              <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Gestión de Usuarios' }} />
-              <Stack.Screen name="AddUser" component={AddUserScreen} options={{ title: 'Agregar Usuario' }} />
+              <Stack.Screen
+                name="AdminHome"
+                component={AdminHome}
+                options={{
+                  title: 'Admin',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
+              <Stack.Screen
+                name="AdminUsers"
+                component={AdminUsersScreen}
+                options={{
+                  title: 'Gestión de Usuarios',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
+              <Stack.Screen name="AddUser" component={AddUserScreen} options={{
+                title: 'Agregar Usuario', headerShown: true,
+                headerStyle: { backgroundColor: '#000' },
+                headerTintColor: '#fff', // flecha y texto blancos
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+              />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="AdminPanel" component={AdminPanelScreen} options={{title: 'Panel de Reportes'}}/>
+              <Stack.Screen
+                name="AdminPanel"
+                component={AdminPanelScreen}
+                options={{
+                  title: 'Panel de Reportes',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
               <Stack.Screen name="AdminReportDetails" component={AdminReportDetailsScreen} options={{ title: 'Detalles de Reportes' }} />
             </>
           ) : (
             <>
-              <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Reportes SIGRA' }} />
-              <Stack.Screen name="CreateReport" component={CreateReportScreen} options={{ title: 'Crear Reporte' }} />
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                options={{
+                  title: 'Reportes SIGRA',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
+              <Stack.Screen
+                name="CreateReport"
+                component={CreateReportScreen}
+                options={{
+                  title: 'Crear Reporte',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Debug" component={DebugScreen} options={{ title: 'Debug' }} />
               <Stack.Screen name="OfflineTest" component={OfflineTestScreen} options={{ title: 'Prueba Offline' }} />

@@ -3,19 +3,22 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
+type LoginScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Login'
+>;
 
 const LoginScreen: React.FC = () => {
   const { signIn } = useAuth();
@@ -30,8 +33,9 @@ const LoginScreen: React.FC = () => {
     setIsLoading(true);
 
     if (!rut || !password) {
-      setError('RUT y contraseña son requeridos');
-      Alert.alert('Error', 'RUT y contraseña son requeridos');
+      const msg = 'RUT y contraseña son requeridos';
+      setError(msg);
+      Alert.alert('Error', msg);
       setIsLoading(false);
       return;
     }
@@ -41,53 +45,47 @@ const LoginScreen: React.FC = () => {
       const response = await authService.login(rutNumber, password);
 
       if (response && response.access_token) {
-        const isPrimerInicio = response.access_token === 'primer_inicio' || response.require_password_change === true;
+        const isPrimerInicio =
+          response.access_token === 'primer_inicio' ||
+          response.require_password_change === true;
+
         if (isPrimerInicio) {
-          // Validar rutNumber antes de navegar
           if (!Number.isFinite(rutNumber) || Number.isNaN(rutNumber)) {
-            setError('RUT inválido para cambio de contraseña');
-            Alert.alert('Error', 'RUT inválido para cambio de contraseña');
+            const msg = 'RUT inválido para cambio de contraseña';
+            setError(msg);
+            Alert.alert('Error', msg);
           } else {
-            // Redirigir a la pantalla de cambio de contraseña y pasar el RUT
             navigation.navigate('ChangePassword', { rut: rutNumber });
           }
         } else {
           await signIn(response.access_token);
         }
       } else {
-        setError('Respuesta inesperada del servidor.');
-        Alert.alert('Error', 'Respuesta inesperada del servidor.');
+        const msg = 'Respuesta inesperada del servidor.';
+        setError(msg);
+        Alert.alert('Error', msg);
       }
     } catch (error: any) {
-      // Log interno para debugging (no se muestra al usuario)
       console.error('Error en la llamada a la API:', error);
 
-      // Mapear errores del backend a mensajes amigables para el usuario.
-      // Evitamos mostrar el `detail` exacto que devuelve el servidor.
-      let userMessage = 'No se pudo iniciar sesión. Intenta nuevamente más tarde.';
+      let userMessage =
+        'No se pudo iniciar sesión. Intenta nuevamente más tarde.';
 
       if (error.response) {
         const status = error.response.status;
-        if (status === 401) {
-          userMessage = 'RUT o contraseña incorrectos.';
-        } else if (status === 403) {
+        if (status === 401) userMessage = 'RUT o contraseña incorrectos.';
+        else if (status === 403)
           userMessage = 'La cuenta está inactiva. Contacta al administrador.';
-        } else if (status === 400) {
+        else if (status === 400)
           userMessage = 'Datos inválidos. Revisa el RUT y la contraseña.';
-        } else if (status >= 500) {
+        else if (status >= 500)
           userMessage = 'Error del servidor. Intenta más tarde.';
-        }
-
-        setError(userMessage);
-        Alert.alert('Error de Inicio de Sesión', userMessage);
       } else if (error.request) {
         userMessage = 'No se pudo conectar al servidor. Verifica tu conexión.';
-        setError(userMessage);
-        Alert.alert('Error de Red', userMessage);
-      } else {
-        setError(userMessage);
-        Alert.alert('Error', userMessage);
       }
+
+      setError(userMessage);
+      Alert.alert('Error de Inicio de Sesión', userMessage);
     } finally {
       setIsLoading(false);
     }
@@ -95,47 +93,111 @@ const LoginScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Iniciar Sesión SIGRA</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="RUT (ej: 123456789)"
-        keyboardType="numeric"
-        value={rut}
-        onChangeText={setRut}
-        editable={!isLoading}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        editable={!isLoading}
-      />
+      {/* LOGO */}
+      <View style={styles.logoContainer}>
+        <Image
+          source={require('../../assets/images/sigraa.jpeg')}
+          style={styles.logo}
+        />
+
+      </View>
+
+      {/* INPUT RUT */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>RUT</Text>
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="Ingresa tu RUT (Ej: 12345678)"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          value={rut}
+          onChangeText={setRut}
+          editable={!isLoading}
+        />
+      </View>
+
+      {/* INPUT CONTRASEÑA */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Contraseña</Text>
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="********"
+          placeholderTextColor="#999"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          editable={!isLoading}
+        />
+      </View>
+
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      {/* BOTÓN */}
       {isLoading ? (
-        <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+        <ActivityIndicator size="large" color="#FFC107" style={styles.loader} />
       ) : (
-        <Button title="Ingresar" onPress={handleLogin} disabled={isLoading} />
+        <TouchableOpacity style={styles.buttonContainer} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Ingresar</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f5f5f5' },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 30, textAlign: 'center', color: '#333' },
-  input: {
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    backgroundColor: '#fff',
-    fontSize: 16,
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  errorText: { color: 'red', marginBottom: 15, textAlign: 'center', fontSize: 14 },
+  logoContainer: {
+    marginBottom: 50,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 400,
+    height: 200,
+    resizeMode: 'contain',
+  },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 25,
+  },
+  label: {
+    color: '#FFC107',
+    fontWeight: 'bold',
+    marginBottom: 5,
+    fontSize: 14,
+  },
+  inputUnderline: {
+    height: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#fff',
+    color: '#fff',
+    fontSize: 16,
+    paddingHorizontal: 5,
+  },
+  buttonContainer: {
+    backgroundColor: '#fff',
+    width: '60%',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  buttonText: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#FF5252',
+    marginTop: 10,
+    fontSize: 14,
+    textAlign: 'center',
+  },
   loader: {
     marginTop: 20,
   },

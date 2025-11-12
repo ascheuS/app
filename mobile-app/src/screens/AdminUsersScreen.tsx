@@ -1,11 +1,22 @@
-import React, {useEffect, useState} from 'react';
-import { View, Text, FlatList, Button, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { authService } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
-type AdminUsersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AdminUsers'>;
+type AdminUsersNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'AdminUsers'
+>;
 
 const AdminUsersScreen: React.FC = () => {
   const navigation = useNavigation<AdminUsersNavigationProp>();
@@ -19,7 +30,10 @@ const AdminUsersScreen: React.FC = () => {
       setUsers(data);
     } catch (err: any) {
       console.error('Error fetching users', err);
-      Alert.alert('Error', err.response?.data?.detail || 'No se pudieron cargar los usuarios');
+      Alert.alert(
+        'Error',
+        err.response?.data?.detail || 'No se pudieron cargar los usuarios'
+      );
     } finally {
       setLoading(false);
     }
@@ -30,44 +44,66 @@ const AdminUsersScreen: React.FC = () => {
   }, []);
 
   const handleToggleEstado = async (rut: number, currentEstado: number) => {
-    const newEstado = currentEstado === 1 ? 2 : 1; // ejemplo: 1=Activo,2=Inactivo
+    const newEstado = currentEstado === 1 ? 2 : 1;
     try {
       await authService.updateUserState(rut, newEstado);
       Alert.alert('Éxito', 'Estado actualizado');
       fetchUsers();
-    } catch (err:any) {
+    } catch (err: any) {
       console.error('Error updating state', err);
-      Alert.alert('Error', err.response?.data?.detail || 'No se pudo actualizar estado');
+      Alert.alert(
+        'Error',
+        err.response?.data?.detail || 'No se pudo actualizar estado'
+      );
     }
   };
 
-  const renderItem = ({item}: {item:any}) => (
-    <View style={styles.item}>
-      <View style={{flex:1}}>
-        <Text style={styles.name}>{item.Nombre} {item.Apellido_1}</Text>
-        <Text style={styles.sub}>{`RUT: ${item.RUT} | Cargo: ${item.ID_Cargo} | Estado: ${item.ID_Estado_trabajador}`}</Text>
+  const renderItem = ({ item }: { item: any }) => (
+    <View style={styles.userCard}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.userName}>
+          {item.Nombre} {item.Apellido_1}
+        </Text>
+        <Text style={styles.userDetails}>
+          RUT: {item.RUT} | Cargo: {item.ID_Cargo} | Estado:{' '}
+          {item.ID_Estado_trabajador}
+        </Text>
       </View>
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.editBtn} onPress={() => handleToggleEstado(item.RUT, item.ID_Estado_trabajador)}>
-          <Text style={styles.editText}>{item.ID_Estado_trabajador === 1 ? 'Desactivar' : 'Activar'}</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={[
+          styles.actionButton,
+          item.ID_Estado_trabajador === 1
+            ? styles.deactivateButton
+            : styles.activateButton,
+        ]}
+        onPress={() => handleToggleEstado(item.RUT, item.ID_Estado_trabajador)}
+      >
+        <Text style={styles.actionButtonText}>
+          {item.ID_Estado_trabajador === 1 ? 'Desactivar' : 'Activar'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Usuarios</Text>
-      <Button title="Agregar Usuario" onPress={() => navigation.navigate('AddUser')} />
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate('AddUser')}
+      >
+        <Text style={styles.addButtonText}>Agregar Usuario</Text>
+      </TouchableOpacity>
 
       {loading ? (
-        <ActivityIndicator size="large" style={{marginTop:20}} />
+        <ActivityIndicator size="large" color="#FF9500" style={{ marginTop: 30 }} />
       ) : (
         <FlatList
           data={users}
           keyExtractor={(item) => String(item.RUT)}
           renderItem={renderItem}
-          contentContainerStyle={{paddingTop:20}}
+          contentContainerStyle={styles.listContainer}
         />
       )}
     </View>
@@ -75,14 +111,73 @@ const AdminUsersScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex:1, padding:20, backgroundColor:'#fff' },
-  title: { fontSize:22, fontWeight:'bold', marginBottom:10 },
-  item: { flexDirection:'row', padding:12, borderBottomWidth:1, borderBottomColor:'#eee' },
-  name: { fontSize:16, fontWeight:'600' },
-  sub: { fontSize:12, color:'#666' },
-  actions: { justifyContent:'center' },
-  editBtn: { backgroundColor:'#007AFF', paddingVertical:6, paddingHorizontal:10, borderRadius:6 },
-  editText: { color:'#fff' }
+  container: {
+    flex: 1,
+    backgroundColor: '#000000ff',
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  addButton: {
+    backgroundColor: '#FF9500',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#FF9500',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  listContainer: {
+    paddingBottom: 40,
+  },
+  userCard: {
+    flexDirection: 'row',
+    backgroundColor: '#1E1E1E',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  userDetails: {
+    fontSize: 13,
+    color: '#aaa',
+  },
+  actionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  deactivateButton: {
+    backgroundColor: '#18ca00ff', // naranja
+  },
+  activateButton: {
+    backgroundColor: '#f00808ff', // mismo color para consistencia
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
+  },
 });
 
 export default AdminUsersScreen;

@@ -1,13 +1,14 @@
-// mobile-app/src/screens/ChangePasswordScreen.tsx
+// src/screens/ChangePasswordScreen.tsx
 import React from 'react';
 import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
@@ -38,7 +39,6 @@ const ChangePasswordScreen: React.FC = () => {
     setError('');
     setIsLoading(true);
 
-    // Validaciones básicas
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('Todos los campos son requeridos');
       setIsLoading(false);
@@ -58,13 +58,8 @@ const ChangePasswordScreen: React.FC = () => {
     }
 
     try {
-      // Llamar al endpoint de cambio de contraseña
-      const response = await authService.changePassword(
-        currentPassword, 
-        newPassword, 
-        rutParam
-      );
-      
+      const response = await authService.changePassword(currentPassword, newPassword, rutParam);
+
       if (response && response.access_token) {
         Alert.alert(
           'Éxito',
@@ -73,34 +68,9 @@ const ChangePasswordScreen: React.FC = () => {
             {
               text: 'OK',
               onPress: async () => {
-                // Iniciar sesión con el nuevo token
                 await signIn(response.access_token);
-                
-                // Decodificar el token para obtener el cargo
-                try {
-                  const decodedToken = jwtDecode<JwtPayload>(response.access_token);
-                  const userCargo = decodedToken.cargo;
-                  
-                  console.log('👤 Usuario cargo:', userCargo);
-                  
-                  // Navegar según el cargo del usuario
-                  const destino = userCargo === 1 ? 'AdminHome' : 'Home';
-                  
-                  console.log('🔀 Navegando a:', destino);
-                  
-                  // Reset navigation stack
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: destino as any }],
-                  });
-                } catch (decodeError) {
-                  console.error('Error decodificando token:', decodeError);
-                  // Fallback: ir a Home por defecto
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' as any }],
-                  });
-                }
+                const destino = (userCargo === 1) ? 'AdminUsers' : 'Home';
+                navigation.reset({ index: 0, routes: [{ name: destino as any }] });
               },
             },
           ]
@@ -118,34 +88,45 @@ const ChangePasswordScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* LOGO */}
+      <View style={styles.logoContainer}>
+        <Image
+          source={require('../../assets/images/sigraaa.jpeg')}
+          style={styles.logo}
+        />
+      </View>
+
       <Text style={styles.title}>Cambiar Contraseña</Text>
       <Text style={styles.subtitle}>
         Es necesario cambiar tu contraseña en el primer inicio de sesión
       </Text>
-      
+
       <TextInput
         style={styles.input}
         placeholder="Contraseña actual"
+        placeholderTextColor="#aaa"
         secureTextEntry
         value={currentPassword}
         onChangeText={setCurrentPassword}
         editable={!isLoading}
         autoCapitalize="none"
       />
-      
+
       <TextInput
         style={styles.input}
         placeholder="Nueva contraseña"
+        placeholderTextColor="#aaa"
         secureTextEntry
         value={newPassword}
         onChangeText={setNewPassword}
         editable={!isLoading}
         autoCapitalize="none"
       />
-      
+
       <TextInput
         style={styles.input}
         placeholder="Confirmar nueva contraseña"
+        placeholderTextColor="#aaa"
         secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
@@ -154,15 +135,17 @@ const ChangePasswordScreen: React.FC = () => {
       />
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      
+
       {isLoading ? (
-        <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+        <ActivityIndicator size="large" color="#FFAA00" style={styles.loader} />
       ) : (
-        <Button 
-          title="Cambiar Contraseña" 
-          onPress={handleChangePassword} 
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleChangePassword}
           disabled={isLoading}
-        />
+        >
+          <Text style={styles.buttonText}>Cambiar Contraseña</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -172,40 +155,68 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#000',
+    paddingHorizontal: 25,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  logo: {
+    width: 300,
+    height: 100,
+    resizeMode: 'contain',
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#fff',
     textAlign: 'center',
-    color: '#333',
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 30,
+    fontSize: 15,
+    color: '#ccc',
     textAlign: 'center',
-    color: '#666',
+    marginBottom: 30,
+    lineHeight: 20,
   },
   input: {
     height: 50,
-    borderColor: '#ccc',
+    borderColor: '#FFAA00',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 15,
     paddingHorizontal: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
+    color: '#fff',
     fontSize: 16,
   },
   errorText: {
-    color: 'red',
-    marginBottom: 15,
+    color: '#FF3B30',
     textAlign: 'center',
+    marginBottom: 15,
     fontSize: 14,
   },
   loader: {
     marginTop: 20,
+  },
+  button: {
+    backgroundColor: '#FFAA00',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#FFAA00',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

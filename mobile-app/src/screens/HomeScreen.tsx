@@ -42,7 +42,6 @@ const HomeScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Cargar reportes cada vez que la pantalla recibe foco
   useFocusEffect(
     useCallback(() => {
       cargarReportes();
@@ -52,8 +51,6 @@ const HomeScreen: React.FC = () => {
   const cargarReportes = async () => {
     try {
       const db = getDB();
-      
-      // Consulta con JOINs para obtener nombres legibles
       const sql = `
         SELECT 
           r.*,
@@ -66,9 +63,7 @@ const HomeScreen: React.FC = () => {
         LEFT JOIN Estado_reportes e ON r.ID_Estado_Actual = e.ID_Estado_Actual
         ORDER BY r.Hora_Creado DESC
       `;
-      
       const result = await db.getAllAsync<ReporteLocal>(sql);
-      console.log(`📋 Reportes cargados: ${result.length}`);
       setReportes(result);
     } catch (error) {
       console.error('Error cargando reportes:', error);
@@ -84,17 +79,14 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    console.log('Cerrando sesión...');
     await signOut();
   };
 
   const renderReporte = ({ item }: { item: ReporteLocal }) => {
     const esSincronizado = item.sincronizado === 1;
     const fechaCreacion = new Date(item.Hora_Creado);
-    
     return (
       <View style={styles.reportCard}>
-        {/* Header con título y estado de sincronización */}
         <View style={styles.reportHeader}>
           <Text style={styles.reportTitle} numberOfLines={2}>
             {item.Titulo}
@@ -106,12 +98,10 @@ const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Descripción */}
         <Text style={styles.reportDescription} numberOfLines={2}>
           {item.Descripcion || 'Sin descripción'}
         </Text>
 
-        {/* Información adicional */}
         <View style={styles.reportInfo}>
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Área:</Text>
@@ -136,7 +126,6 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Footer con fecha y estado */}
         <View style={styles.reportFooter}>
           <Text style={styles.reportDate}>
             {fechaCreacion.toLocaleDateString('es-CL', {
@@ -170,7 +159,7 @@ const HomeScreen: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#FFA500" />
         <Text style={styles.loadingText}>Cargando reportes...</Text>
       </View>
     );
@@ -186,227 +175,74 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Lista de reportes */}
+      {/* Lista */}
       <FlatList
         data={reportes}
         renderItem={renderReporte}
         keyExtractor={(item) => `reporte-${item.id_local}`}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
 
-      {/* Botones de acción */}
+      {/* Botones */}
       <View style={styles.actionsContainer}>
         {userCargo !== 1 && (
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Crear Reporte"
-              onPress={() => navigation.navigate('CreateReport')}
-              color="#007AFF"
-            />
-          </View>
+          <TouchableOpacity style={styles.orangeButton} onPress={() => navigation.navigate('CreateReport')}>
+            <Text style={styles.orangeButtonText}>Crear Reporte</Text>
+          </TouchableOpacity>
         )}
-        
-        <View style={styles.buttonWrapper}>
-          <Button
-            title="Testing Offline/Sync"
-            onPress={() => navigation.navigate('OfflineTest')}
-            color="#4CAF50"
-          />
-        </View>
 
-        <View style={styles.buttonWrapper}>
-          <Button
-            title="🔍 Ver Base de Datos"
-            onPress={() => navigation.navigate('Debug')}
-            color="#9C27B0"
-          />
-        </View>
+        <TouchableOpacity style={styles.orangeButton} onPress={() => navigation.navigate('OfflineTest')}>
+          <Text style={styles.orangeButtonText}>Testing Offline/Sync</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.orangeButton} onPress={() => navigation.navigate('Debug')}>
+          <Text style={styles.orangeButtonText}>🔍 Ver Base de Datos</Text>
+        </TouchableOpacity>
 
         {userCargo === 1 && (
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Gestión de usuarios"
-              onPress={() => navigation.navigate('AdminUsers')}
-              color="#007AFF"
-            />
-          </View>
+          <TouchableOpacity style={styles.orangeButton} onPress={() => navigation.navigate('AdminUsers')}>
+            <Text style={styles.orangeButtonText}>Gestión de usuarios</Text>
+          </TouchableOpacity>
         )}
 
-        <View style={styles.buttonWrapper}>
-          <Button
-            title="Cerrar Sesión"
-            onPress={handleLogout}
-            color="#FF3B30"
-          />
-        </View>
+        <TouchableOpacity style={[styles.orangeButton, { backgroundColor: '#FF3B30' }]} onPress={handleLogout}>
+          <Text style={styles.orangeButtonText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    flex: 1,
-  },
-  headerBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  headerBadgeText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  listContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  reportCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  reportHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  reportTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
-  },
-  syncBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#f57c00',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  syncBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-  },
-  reportDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  reportInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  infoItem: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  severityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  severityText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  reportFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  reportDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  syncStatus: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#666',
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    paddingHorizontal: 40,
-  },
-  actionsContainer: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  buttonWrapper: {
-    marginBottom: 12,
-  },
+  container: { flex: 1, backgroundColor: '#000000ff' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+  loadingText: { marginTop: 12, fontSize: 16, color: '#ccc' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 20, backgroundColor: '#1E1E1E', borderBottomWidth: 1, borderBottomColor: '#333' },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#fff', flex: 1 },
+  headerBadge: { backgroundColor: '#f57c00', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  headerBadgeText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  listContent: { padding: 16, flexGrow: 1 },
+  reportCard: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 4 },
+  reportHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  reportTitle: { fontSize: 18, fontWeight: '700', color: '#fff', flex: 1, marginRight: 8 },
+  syncBadge: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#f57c00', justifyContent: 'center', alignItems: 'center' },
+  syncBadgeText: { color: '#fff', fontSize: 10 },
+  reportDescription: { fontSize: 14, color: '#bbb', marginBottom: 12 },
+  infoLabel: { fontSize: 12, color: '#999' },
+  infoValue: { fontSize: 14, color: '#fff', fontWeight: '500' },
+  severityBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-start' },
+  severityText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  reportFooter: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#333', paddingTop: 10 },
+  reportDate: { fontSize: 12, color: '#aaa' },
+  syncStatus: { fontSize: 12, fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 8 },
+  emptyText: { fontSize: 14, color: '#ccc', textAlign: 'center', paddingHorizontal: 40 },
+  actionsContainer: { backgroundColor: '#1E1E1E', padding: 16, borderTopWidth: 1, borderTopColor: '#333' },
+  orangeButton: { backgroundColor: '#f57c00', paddingVertical: 12, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
+  orangeButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default HomeScreen;
