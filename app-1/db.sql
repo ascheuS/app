@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS Bitacora_reportes;
 DROP TABLE IF EXISTS Multimedia_reportes;
 DROP TABLE IF EXISTS Reportes;
 DROP TABLE IF EXISTS Usuarios;
+DROP TABLE IF EXISTS Estado_transicion;
 DROP TABLE IF EXISTS Estado_reportes;
 DROP TABLE IF EXISTS Severidad;
 DROP TABLE IF EXISTS Areas;

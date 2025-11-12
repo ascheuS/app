@@ -41,6 +41,7 @@ mobile-app/*.tsbuildinfo
 mobile-app/app-example # Si esto es solo un ejemplo
 mobile-app/ios/ # Carpeta nativa generada
 mobile-app/android/ # Carpeta nativa generada
+mobile-app/app.json # Si tienes configuraciones sensibles aquí
 # Ignorar archivo de configuración específico del frontend
 mobile-app/src/constants/config.ts
 
