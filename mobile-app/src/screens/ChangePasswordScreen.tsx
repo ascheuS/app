@@ -69,8 +69,30 @@ const ChangePasswordScreen: React.FC = () => {
               text: 'OK',
               onPress: async () => {
                 await signIn(response.access_token);
-                const destino = (userCargo === 1) ? 'AdminUsers' : 'Home';
-                navigation.reset({ index: 0, routes: [{ name: destino as any }] });
+                try {
+                  const decodedToken = jwtDecode<JwtPayload>(response.access_token);
+                  const userCargo = decodedToken.cargo;
+                  
+                  console.log('👤 Usuario cargo:', userCargo);
+                  
+                  // Navegar según el cargo del usuario
+                  const destino = userCargo === 1 ? 'AdminHome' : 'Home';
+                  
+                  console.log('🔀 Navegando a:', destino);
+                  
+                  // Reset navigation stack
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: destino as any }],
+                  });
+                } catch (decodeError) {
+                  console.error('Error decodificando token:', decodeError);
+                  // Fallback: ir a Home por defecto
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' as any }],
+                  });
+                }
               },
             },
           ]
@@ -85,7 +107,6 @@ const ChangePasswordScreen: React.FC = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <View style={styles.container}>
       {/* LOGO */}
