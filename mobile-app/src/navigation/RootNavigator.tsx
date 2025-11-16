@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useAuth } from '../context/AuthContext'; // Importa el hook useAuth
+import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import LoadingScreen from '../screens/LoadingScreen';
@@ -26,8 +26,28 @@ const RootNavigator = () => {
   const { userToken, isLoading, userCargo } = useAuth() as any;
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
+  // DEBUGGING: Log cada vez que el componente se renderiza
+  useEffect(() => {
+    console.log('🔄 RootNavigator renderizado');
+    console.log('  📊 Estado actual:', {
+      userToken: userToken ? 'EXISTS' : 'NULL',
+      userCargo,
+      isLoading,
+    });
+  });
+
+  // DEBUGGING: Log cuando cambia el userToken
+  useEffect(() => {
+    console.log('🔑 userToken cambió:', userToken ? 'EXISTS' : 'NULL');
+  }, [userToken]);
+
+  // DEBUGGING: Log cuando cambia el userCargo
+  useEffect(() => {
+    console.log('👤 userCargo cambió:', userCargo);
+  }, [userCargo]);
+
   // Set up global navigation reference
-  React.useEffect(() => {
+  useEffect(() => {
     global.navigation = navigationRef.current;
     return () => {
       global.navigation = null;
@@ -35,9 +55,15 @@ const RootNavigator = () => {
   }, []);
 
   if (isLoading) {
+    console.log('⏳ Mostrando LoadingScreen');
     return <LoadingScreen />;
   }
 
+  console.log('🎯 Decisión de navegación:', {
+    userToken: userToken ? 'EXISTS' : 'NULL',
+    userCargo,
+    stack: userToken == null ? 'Login/ChangePassword' : userCargo === 1 ? 'Admin' : 'User',
+  });
 
   return (
     <NavigationContainer ref={navigationRef}>
@@ -45,11 +71,9 @@ const RootNavigator = () => {
         {userToken == null ? (
           <>
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            {/* Permitir acceso a ChangePassword también desde la pantalla de Login (primer inicio) */}
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
           </>
         ) : (
-          // Mostrar stacks separados según el cargo del usuario
           userCargo === 1 ? (
             <>
               <Stack.Screen
@@ -59,7 +83,7 @@ const RootNavigator = () => {
                   title: 'Admin',
                   headerShown: true,
                   headerStyle: { backgroundColor: '#000' },
-                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />
@@ -70,16 +94,20 @@ const RootNavigator = () => {
                   title: 'Gestión de Usuarios',
                   headerShown: true,
                   headerStyle: { backgroundColor: '#000' },
-                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />
-              <Stack.Screen name="AddUser" component={AddUserScreen} options={{
-                title: 'Agregar Usuario', headerShown: true,
-                headerStyle: { backgroundColor: '#000' },
-                headerTintColor: '#fff', // flecha y texto blancos
-                headerTitleStyle: { fontWeight: 'bold' },
-              }}
+              <Stack.Screen 
+                name="AddUser" 
+                component={AddUserScreen} 
+                options={{
+                  title: 'Agregar Usuario',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff',
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
               />
               <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
               <Stack.Screen
@@ -89,7 +117,7 @@ const RootNavigator = () => {
                   title: 'Panel de Reportes',
                   headerShown: true,
                   headerStyle: { backgroundColor: '#000' },
-                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />
@@ -100,7 +128,7 @@ const RootNavigator = () => {
                   title: 'Detalles de Reportes',
                   headerShown: true,
                   headerStyle: { backgroundColor: '#000' },
-                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />
@@ -114,7 +142,7 @@ const RootNavigator = () => {
                   title: 'Reportes SIGRA',
                   headerShown: true,
                   headerStyle: { backgroundColor: '#000' },
-                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />
@@ -125,7 +153,7 @@ const RootNavigator = () => {
                   title: 'Crear Reporte',
                   headerShown: true,
                   headerStyle: { backgroundColor: '#000' },
-                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTintColor: '#fff',
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />

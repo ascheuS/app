@@ -1,5 +1,5 @@
 // mobile-app/src/context/AuthContext.tsx
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import LoadingScreen from '../screens/LoadingScreen';
 import { initDatabase } from '../db/database';
@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         if (token) {
           if (token === 'primer_inicio') {
-            // Usuario necesita cambiar contraseña
+            // Usuario necesita cambiar contraseña - limpiar
             await SecureStore.deleteItemAsync('userToken');
             token = null;
           } else {
@@ -70,54 +70,69 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     bootstrapAsync();
   }, []);
 
+  const signIn = useCallback(async (token: string) => {
+    try {
+      console.log('🔐 SignIn llamado con token:', token.substring(0, 20) + '...');
+      
+      // Si es "primer_inicio", NO actualizar el estado
+      // Solo retornar para que LoginScreen maneje la navegación
+      if (token === 'primer_inicio') {
+        console.log('⚠️ Token de primer inicio detectado');
+        return;
+      }
+
+      // Es un token real - decodificar y guardar
+      const decodedToken = jwtDecode<JwtPayload>(token);
+      console.log('🔓 Token decodificado:', { rut: decodedToken.rut, cargo: decodedToken.cargo });
+      
+      // Guardar en SecureStore
+      await SecureStore.setItemAsync('userToken', token);
+      console.log('💾 Token guardado en SecureStore');
+      
+      // CRÍTICO: Actualizar estados en batch
+      // Esto fuerza un solo re-render del RootNavigator
+      console.log('🔄 Actualizando estados...');
+      setUserToken(token);
+      setUserCargo(decodedToken.cargo);
+      setUserRUT(decodedToken.rut);
+      
+      console.log('✅ Login exitoso:', { rut: decodedToken.rut, cargo: decodedToken.cargo });
+      
+      // Pequeño delay para asegurar que el estado se propague
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (e) {
+      console.error('❌ Error en signIn:', e);
+      // Si falla, limpiar todo
+      await SecureStore.deleteItemAsync('userToken').catch(() => {});
+      setUserToken(null);
+      setUserCargo(null);
+      setUserRUT(null);
+    }
+  }, []);
+  
+  const signOut = useCallback(async () => {
+    try {
+      await SecureStore.deleteItemAsync('userToken');
+      setUserToken(null);
+      setUserCargo(null);
+      setUserRUT(null);
+      console.log('✅ Sesión cerrada');
+    } catch (e) {
+      console.error('❌ Error cerrando sesión:', e);
+    }
+  }, []);
+
   const authContextValue = React.useMemo(
     () => ({
       userToken,
       isLoading,
       userCargo,
       userRUT,
-      
-      signIn: async (token: string) => {
-        try {
-          await SecureStore.setItemAsync('userToken', token);
-          setUserToken(token);
-          
-          if (token === 'primer_inicio') {
-            // Usuario necesita cambiar contraseña
-            await SecureStore.deleteItemAsync('userToken');
-            setUserToken(null);
-            setUserCargo(null);
-            setUserRUT(null);
-            return;
-          }
-
-          // Decodificar token y guardar datos del usuario
-          try {
-            const decodedToken = jwtDecode<JwtPayload>(token);
-            setUserCargo(decodedToken.cargo);
-            setUserRUT(decodedToken.rut);
-            console.log('✅ Login exitoso:', { rut: decodedToken.rut, cargo: decodedToken.cargo });
-          } catch (err) {
-            console.warn('⚠️ No se pudo decodificar token:', err);
-          }
-        } catch (e) {
-          console.error('❌ Error guardando token:', e);
-        }
-      },
-      
-      signOut: async () => {
-        try {
-          await SecureStore.deleteItemAsync('userToken');
-          setUserToken(null);
-          setUserCargo(null);
-          setUserRUT(null);
-          console.log('✅ Sesión cerrada');
-        } catch (e) {
-          console.error('❌ Error cerrando sesión:', e);
-        }
-      },
+      signIn,
+      signOut,
     }),
-    [userToken, isLoading, userCargo, userRUT]
+    [userToken, isLoading, userCargo, userRUT, signIn, signOut]
   );
 
   if (isLoading) {

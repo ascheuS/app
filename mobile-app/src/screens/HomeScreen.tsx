@@ -215,7 +215,7 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const   styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000ff' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   loadingText: { marginTop: 12, fontSize: 16, color: '#ccc' },

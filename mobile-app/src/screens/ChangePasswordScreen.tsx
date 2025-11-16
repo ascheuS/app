@@ -12,21 +12,13 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation, CommonActions } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { jwtDecode } from 'jwt-decode';
-
-interface JwtPayload {
-  rut: number;
-  cargo: number;
-  exp: number;
-}
 
 const ChangePasswordScreen: React.FC = () => {
-  const { signIn } = useAuth() as any;
+  const { signIn, userCargo } = useAuth() as any;
   const route = useRoute<RouteProp<RootStackParamList, 'ChangePassword'>>();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation();
   const rutParam = route?.params?.rut;
   
   const [currentPassword, setCurrentPassword] = React.useState('');
@@ -61,41 +53,37 @@ const ChangePasswordScreen: React.FC = () => {
       const response = await authService.changePassword(currentPassword, newPassword, rutParam);
 
       if (response && response.access_token) {
+        console.log('🎉 Contraseña cambiada, ejecutando signIn...');
+        
+        // Hacer signIn con el nuevo token
+        await signIn(response.access_token);
+        
+        console.log('✅ SignIn completado, esperando actualización de estado...');
+        
+        // CRÍTICO: Dar tiempo para que el estado se propague
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Mostrar alert y navegar después de cerrar
         Alert.alert(
           'Éxito',
-          'Contraseña cambiada correctamente',
+          'Contraseña cambiada correctamente. Bienvenido.',
           [
             {
               text: 'OK',
-              onPress: async () => {
-                await signIn(response.access_token);
-                try {
-                  const decodedToken = jwtDecode<JwtPayload>(response.access_token);
-                  const userCargo = decodedToken.cargo;
-                  
-                  console.log('👤 Usuario cargo:', userCargo);
-                  
-                  // Navegar según el cargo del usuario
-                  const destino = userCargo === 1 ? 'AdminHome' : 'Home';
-                  
-                  console.log('🔀 Navegando a:', destino);
-                  
-                  // Reset navigation stack
-                  navigation.reset({
+              onPress: () => {
+                // Forzar navegación al stack correcto
+                // Esto resetea toda la pila de navegación
+                console.log('🚀 Forzando navegación...');
+                navigation.dispatch(
+                  CommonActions.reset({
                     index: 0,
-                    routes: [{ name: destino as any }],
-                  });
-                } catch (decodeError) {
-                  console.error('Error decodificando token:', decodeError);
-                  // Fallback: ir a Home por defecto
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' as any }],
-                  });
-                }
+                    routes: [{ name: 'Home' as any }], // Para cargo 2, ir a Home
+                  })
+                );
               },
             },
-          ]
+          ],
+          { cancelable: false }
         );
       }
     } catch (error: any) {
@@ -107,6 +95,7 @@ const ChangePasswordScreen: React.FC = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <View style={styles.container}>
       {/* LOGO */}
