@@ -52,12 +52,9 @@ const AdminReportDetailsScreen = () => {
   const loadReport = async () => {
     setLoading(true);
     try {
-      console.log('📡 Cargando reporte ID:', reportId);
       const reportData = await reportService.getReportById(reportId, userToken);
-      console.log('✅ Reporte cargado:', reportData);
       setCurrentReport(reportData);
     } catch (error: any) {
-      console.error('❌ Error cargando reporte:', error);
       Alert.alert('Error', 'No se pudo cargar el reporte: ' + (error.message || 'Error desconocido'));
       navigation.goBack();
     } finally {
@@ -76,21 +73,15 @@ const AdminReportDetailsScreen = () => {
           onPress: async () => {
             setUpdating(true);
             try {
-              console.log('🔄 Actualizando estado del reporte:', reportId, 'a:', newStatusId);
-              
               await reportService.updateReportStatus(
                 reportId, 
                 newStatusId, 
                 `Estado cambiado a ${statusName} por administrador`,
                 userToken
               );
-              
               Alert.alert('✅ Éxito', 'Estado actualizado correctamente');
-              
-              // Recargar datos
               await loadReport();
             } catch (error: any) {
-              console.error('❌ Error actualizando estado:', error);
               Alert.alert(
                 'Error', 
                 'No se pudo actualizar el estado: ' + (error.response?.data?.detail || error.message)
@@ -106,27 +97,27 @@ const AdminReportDetailsScreen = () => {
 
   const getSeverityColor = (severityId?: number) => {
     switch (severityId) {
-      case 3: return '#f44336'; // Alta - Rojo
-      case 2: return '#FFC107'; // Media - Amarillo
-      case 1: return '#4CAF50'; // Baja - Verde
-      default: return '#666';
+      case 3: return '#f44336';
+      case 2: return '#FFC107';
+      case 1: return '#4CAF50';
+      default: return '#888';
     }
   };
 
   const getStatusColor = (status?: string) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
+    const s = status?.toLowerCase();
+    switch (s) {
       case 'pendiente': return '#FFA500';
       case 'aprobado': return '#4CAF50';
       case 'rechazado': return '#f44336';
-      default: return '#666';
+      default: return '#888';
     }
   };
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#FFA500" />
         <Text style={styles.loadingText}>Cargando detalles del reporte...</Text>
       </View>
     );
@@ -145,72 +136,53 @@ const AdminReportDetailsScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header con título */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.title}>{currentReport.Titulo}</Text>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: getStatusColor(currentReport.Nombre_Estado) }
-        ]}>
-          <Text style={styles.statusBadgeText}>
-            {currentReport.Nombre_Estado || 'Pendiente'}
-          </Text>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(currentReport.Nombre_Estado) }]}>
+          <Text style={styles.statusBadgeText}>{currentReport.Nombre_Estado || 'Pendiente'}</Text>
         </View>
       </View>
 
-      {/* ID del Reporte */}
+      {/* ID */}
       <View style={styles.idContainer}>
         <Text style={styles.idLabel}>ID del Reporte:</Text>
         <Text style={styles.idValue}>{currentReport.ID_Reporte}</Text>
       </View>
 
-      {/* Descripción */}
+      {/* DESCRIPCIÓN */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📝 Descripción</Text>
-        <Text style={styles.description}>
-          {currentReport.Descripcion || 'Sin descripción'}
-        </Text>
+        <Text style={styles.description}>{currentReport.Descripcion || 'Sin descripción'}</Text>
       </View>
 
-      {/* Información del Reporte */}
+      {/* INFO */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>ℹ️ Información</Text>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Área:</Text>
-          <Text style={styles.infoValue}>
-            {currentReport.Nombre_Area || 'No especificada'}
-          </Text>
+          <Text style={styles.infoValue}>{currentReport.Nombre_Area || 'No especificada'}</Text>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Severidad:</Text>
-          <View style={[
-            styles.severityBadge,
-            { backgroundColor: getSeverityColor(currentReport.ID_Severidad) }
-          ]}>
-            <Text style={styles.severityText}>
-              {currentReport.Nombre_Severidad || 'No especificada'}
-            </Text>
+          <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(currentReport.ID_Severidad) }]}>
+            <Text style={styles.severityText}>{currentReport.Nombre_Severidad || 'No especificada'}</Text>
           </View>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Creado por:</Text>
-          <Text style={styles.infoValue}>
-            {currentReport.Nombre_Usuario || `RUT: ${currentReport.RUT}`}
-          </Text>
+          <Text style={styles.infoValue}>{currentReport.Nombre_Usuario || `RUT: ${currentReport.RUT}`}</Text>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Fecha de creación:</Text>
           <Text style={styles.infoValue}>
             {new Date(currentReport.Hora_Creado).toLocaleString('es-CL', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
+              year: 'numeric', month: 'long', day: 'numeric',
+              hour: '2-digit', minute: '2-digit'
             })}
           </Text>
         </View>
@@ -220,69 +192,45 @@ const AdminReportDetailsScreen = () => {
             <Text style={styles.infoLabel}>Sincronizado:</Text>
             <Text style={styles.infoValue}>
               {new Date(currentReport.Hora_Sincronizado).toLocaleString('es-CL', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
               })}
             </Text>
           </View>
         )}
       </View>
 
-      {/* Cambiar Estado */}
+      {/* ESTADO */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🔄 Cambiar Estado</Text>
-        
+
         <TouchableOpacity 
-          style={[
-            styles.statusButton, 
-            { backgroundColor: '#FFA500' },
-            currentReport.ID_Estado_Actual === 1 && styles.statusButtonActive
-          ]} 
+          style={[styles.statusButton, { backgroundColor: '#FFA500' }]} 
           onPress={() => updateStatus(1, 'Pendiente')}
           disabled={updating || currentReport.ID_Estado_Actual === 1}
         >
-          <Text style={styles.statusButtonText}>
-            {currentReport.ID_Estado_Actual === 1 ? '✓ ' : ''}Pendiente
-          </Text>
+          <Text style={styles.statusButtonText}>Pendiente</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[
-            styles.statusButton, 
-            { backgroundColor: '#4CAF50' },
-            currentReport.ID_Estado_Actual === 2 && styles.statusButtonActive
-          ]} 
+          style={[styles.statusButton, { backgroundColor: '#4CAF50' }]} 
           onPress={() => updateStatus(2, 'Aprobado')}
           disabled={updating || currentReport.ID_Estado_Actual === 2}
         >
-          <Text style={styles.statusButtonText}>
-            {currentReport.ID_Estado_Actual === 2 ? '✓ ' : ''}Aprobar
-          </Text>
+          <Text style={styles.statusButtonText}>Aprobar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[
-            styles.statusButton, 
-            { backgroundColor: '#f44336' },
-            currentReport.ID_Estado_Actual === 3 && styles.statusButtonActive
-          ]} 
+          style={[styles.statusButton, { backgroundColor: '#f44336' }]} 
           onPress={() => updateStatus(3, 'Rechazado')}
           disabled={updating || currentReport.ID_Estado_Actual === 3}
         >
-          <Text style={styles.statusButtonText}>
-            {currentReport.ID_Estado_Actual === 3 ? '✓ ' : ''}Rechazar
-          </Text>
+          <Text style={styles.statusButtonText}>Rechazar</Text>
         </TouchableOpacity>
 
-        {updating && (
-          <ActivityIndicator size="large" color="#007AFF" style={styles.updatingIndicator} />
-        )}
+        {updating && <ActivityIndicator size="large" color="#FFA500" style={styles.updatingIndicator} />}
       </View>
 
-      {/* Espaciado inferior */}
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -291,26 +239,26 @@ const AdminReportDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#000000ff',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#000000ff',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: '#aaa',
   },
   errorText: {
     fontSize: 18,
-    color: '#f44336',
+    color: '#ff6b6b',
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFA500',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -321,16 +269,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000000ff',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#333',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 12,
-    color: '#333',
+    color: '#fff',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -344,59 +292,57 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   idContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000000ff',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#333',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
   idLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#aaa',
   },
   idValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#FFA500',
     fontFamily: 'monospace',
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1e1e1e',
     padding: 20,
     marginTop: 12,
+    borderRadius: 12,
+    marginHorizontal: 8,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
+    color: '#fff',
   },
   description: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#666',
+    color: '#ccc',
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#333',
   },
   infoLabel: {
     fontSize: 14,
-    color: '#666',
-    flex: 1,
+    color: '#aaa',
   },
   infoValue: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
-    flex: 2,
+    color: '#fff',
     textAlign: 'right',
   },
   severityBadge: {
@@ -414,15 +360,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
     alignItems: 'center',
-  },
-  statusButtonActive: {
-    borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
   },
   statusButtonText: {
     color: 'white',

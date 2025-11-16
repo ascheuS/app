@@ -93,7 +93,17 @@ const RootNavigator = () => {
                   headerTitleStyle: { fontWeight: 'bold' },
                 }}
               />
-              <Stack.Screen name="AdminReportDetails" component={AdminReportDetailsScreen} options={{ title: 'Detalles de Reportes' }} />
+              <Stack.Screen
+                name="AdminReportDetails"
+                component={AdminReportDetailsScreen}
+                options={{
+                  title: 'Detalles de Reportes',
+                  headerShown: true,
+                  headerStyle: { backgroundColor: '#000' },
+                  headerTintColor: '#fff', // flecha y texto blancos
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
             </>
           ) : (
             <>
